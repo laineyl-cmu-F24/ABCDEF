@@ -1,4 +1,5 @@
-﻿open FSharp.Data
+﻿module Historical
+open FSharp.Data
 open System.IO
 
 type HistoricalData =
