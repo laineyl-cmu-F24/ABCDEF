@@ -6,8 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Historical_Calculation.fs" />
-    <Compile Include="api.fs" />
+      <Compile Include="Historical_Calculation.fs" />
+      <Compile Include="metric.fs" />
+      <Compile Include="api.fs" />
+      
   </ItemGroup>
 
   <ItemGroup>

@@ -6,6 +6,7 @@ open Suave.Operators
 open Suave.Filters
 
 open Historical
+open Metric
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -138,22 +139,29 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
         | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())
     }
     
-let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
-    async {
-        let currencyPair = Placeholder // TODO: get currency pair
-        match currencyPair with
-        | some pair ->
-            return (Successful.OK "Successfully got historical arbitrage", ())
-        | _ -> return (RequestErrors.BAD_REQUEST "Error during retrieval", ())
-    }
+// let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+//     async {
+//         let currencyPair = Placeholder // TODO: get currency pair
+//         match currencyPair with
+//         | some pair ->
+//             return (Successful.OK "Successfully got historical arbitrage", ())
+//         | _ -> return (RequestErrors.BAD_REQUEST "Error during retrieval", ())
+//     }
     
 let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
-        let annualReturn = Placeholder // TODO: get annual return
-        match annualReturn with
-        | some pair ->
-            return (Successful.OK "Successfully got annual return", ())
-        | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())
+        let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
+        match currTradingState.TradingParams with
+        | Some tradingParams ->
+            let initialAmount = tradingParams.InitialInvestmentAmount
+            let annualReturn = AnnualizedMetric initialAmount // Perform the annual return calculation here
+
+            match annualReturn with
+            | annualReturn ->
+                return (Successful.OK "Successfully got annual return", ())
+            | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())
+
+        | None -> return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
     }
 
 let app =
@@ -162,7 +170,7 @@ let app =
         GET >=> path "/api/strategy" >=> handleRequest getTradingParameters
         POST >=> path "/api/trading" >=> handleRequest toggleTrading
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
-        GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
+        // GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
     ]
 
