@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Include="test-metric.fs"/>
+    <Compile Include="test-map-reduce.fs"/>
   </ItemGroup>
 
   <ItemGroup>
