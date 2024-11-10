@@ -1,26 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {}
+    "/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {}
   },
   "projects": {
-    "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {
+    "/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
+        "projectUniqueName": "/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
         "projectName": "ArbitrageGainer",
-        "projectPath": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
-        "packagesPath": "/Users/pasmac/.nuget/packages/",
-        "outputPath": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/obj/",
+        "projectPath": "/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
+        "packagesPath": "/Users/ranfang/.nuget/packages/",
+        "outputPath": "/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/pasmac/.nuget/NuGet/NuGet.Config"
+          "/Users/ranfang/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0"
         ],
         "sources": {
-          "/usr/local/share/dotnet/sdk/6.0.425/FSharp/library-packs": {},
+          "/Users/ranfang/.dotnet/sdk/6.0.418/FSharp/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -49,6 +49,11 @@
               "target": "Package",
               "version": "[2.6.2, )",
               "generatePathProperty": true
+            },
+            "Swashbuckle": {
+              "target": "Package",
+              "version": "[5.6.0, )",
+              "generatePathProperty": true
             }
           },
           "imports": [
@@ -67,7 +72,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/6.0.425/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/Users/ranfang/.dotnet/sdk/6.0.418/RuntimeIdentifierGraph.json"
         }
       }
     }

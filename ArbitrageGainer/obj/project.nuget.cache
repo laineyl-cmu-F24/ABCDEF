@@ -1,19 +1,109 @@
 {
   "version": 2,
-  "dgSpecHash": "GiSwEi+rdmo/TrGaoTri0E21J53H3USvGr4dvdzORthLdGtePF8oCAguM5E6x94sfz6iWBjbMOXXnZMVY10iQQ==",
+  "dgSpecHash": "u5xzeQ4AtX4=",
   "success": true,
-  "projectFilePath": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
+  "projectFilePath": "/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
   "expectedPackageFiles": [
-    "/Users/pasmac/.nuget/packages/fsharp.core/6.0.7/fsharp.core.6.0.7.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data/6.4.0/fsharp.data.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.csv.core/6.4.0/fsharp.data.csv.core.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.html.core/6.4.0/fsharp.data.html.core.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.http/6.4.0/fsharp.data.http.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.json.core/6.4.0/fsharp.data.json.core.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.runtime.utilities/6.4.0/fsharp.data.runtime.utilities.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.worldbank.core/6.4.0/fsharp.data.worldbank.core.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/fsharp.data.xml.core/6.4.0/fsharp.data.xml.core.6.4.0.nupkg.sha512",
-    "/Users/pasmac/.nuget/packages/suave/2.6.2/suave.2.6.2.nupkg.sha512"
+    "/Users/ranfang/.nuget/packages/fsharp.core/6.0.7/fsharp.core.6.0.7.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data/6.4.0/fsharp.data.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.csv.core/6.4.0/fsharp.data.csv.core.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.html.core/6.4.0/fsharp.data.html.core.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.http/6.4.0/fsharp.data.http.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.json.core/6.4.0/fsharp.data.json.core.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.runtime.utilities/6.4.0/fsharp.data.runtime.utilities.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.worldbank.core/6.4.0/fsharp.data.worldbank.core.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/fsharp.data.xml.core/6.4.0/fsharp.data.xml.core.6.4.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/microsoft.aspnet.webapi.client/4.0.20710/microsoft.aspnet.webapi.client.4.0.20710.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/microsoft.aspnet.webapi.core/4.0.20710/microsoft.aspnet.webapi.core.4.0.20710.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/microsoft.aspnet.webapi.webhost/4.0.20710/microsoft.aspnet.webapi.webhost.4.0.20710.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/microsoft.net.http/2.0.20710/microsoft.net.http.2.0.20710.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/microsoft.web.infrastructure/1.0.0/microsoft.web.infrastructure.1.0.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/newtonsoft.json/7.0.1/newtonsoft.json.7.0.1.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/suave/2.6.2/suave.2.6.2.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/swashbuckle/5.6.0/swashbuckle.5.6.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/swashbuckle.core/5.6.0/swashbuckle.core.5.6.0.nupkg.sha512",
+    "/Users/ranfang/.nuget/packages/webactivatorex/2.0.0/webactivatorex.2.0.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.AspNet.WebApi.Client 4.0.20710' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.AspNet.WebApi.Client",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.AspNet.WebApi.Core 4.0.20710' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.AspNet.WebApi.Core",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.AspNet.WebApi.WebHost 4.0.20710' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.AspNet.WebApi.WebHost",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.Net.Http 2.0.20710' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.Net.Http",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.Web.Infrastructure 1.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.Web.Infrastructure",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Newtonsoft.Json 7.0.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Newtonsoft.Json",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Swashbuckle.Core 5.6.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Swashbuckle.Core",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'WebActivatorEx 2.0.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net6.0'. This package may not be fully compatible with your project.",
+      "libraryId": "WebActivatorEx",
+      "targetGraphs": [
+        "net6.0"
+      ]
+    }
+  ]
 }
