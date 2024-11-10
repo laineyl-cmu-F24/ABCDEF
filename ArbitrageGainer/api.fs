@@ -121,17 +121,9 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
             match currTradingState.TradingParams with
             |Some tradingParams ->
                 let numOfCrypto = tradingParams.NumOfCrypto
-                //let tradeHistory = currTradingState.TradeHistory
-                //need to be change with the above line
-                let tradeHistory = [
-                    { Pair = "BTC-USD"; OpportunityCount = 5 }
-                    { Pair = "ETH-USD"; OpportunityCount = 3 }
-                    { Pair = "LTC-USD"; OpportunityCount = 8 }
-                    { Pair = "XRP-USD"; OpportunityCount = 2 }
-                    { Pair = "BCH-USD"; OpportunityCount = 6 }
-                ]
+                let tradeHistory = currTradingState.TradeHistory
                 //need to be change with actual
-                let crossTradedCryptos = Set.ofList ["BTC-USD"; "ETH-USD"; "LTC-USD"; "XRP-USD"; "BCH-USD"]
+                let crossTradedCryptos = Set.ofList ["MKR-USD"; "ETH-USD"; "LTC-USD"; "XRP-USD"; "BCH-USD"]
                 let uri = Uri("wss://socket.polygon.io/crypto")
                 let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
                 let webSocketClient = WebSocketClient(uri, apiKey) :> IWebSocketClient
