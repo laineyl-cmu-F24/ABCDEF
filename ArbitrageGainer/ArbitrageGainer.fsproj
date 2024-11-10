@@ -7,8 +7,18 @@
 
   <ItemGroup>
       <Compile Include="Historical_Calculation.fs" />
+      <Compile Include="MarketData.fs" />
       <Compile Include="metric.fs" />
+      <Compile Include="CurrencyPairRetrieval.fs" />
       <Compile Include="api.fs" />
+      <Compile Include="Core\ArbitrageAnalysis.fs" />
+      <Compile Include="Core\Models.fs" />
+      <Compile Include="Core\Interfaces.fs" />
+      <Compile Include="Core\Helper.fs" />
+      <Compile Include="Core\ParsingMessage.fs" />
+      <Compile Include="Infrastructure\WebSocketClient.fs" />
+      <Compile Include="Service\Cache.fs" />
+      <Compile Include="Service\Workflow.fs" />
       
   </ItemGroup>
 

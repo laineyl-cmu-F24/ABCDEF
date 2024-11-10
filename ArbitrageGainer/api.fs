@@ -7,6 +7,7 @@ open Suave.Filters
 
 open Historical
 open Metric
+open CrossTradedCurrencyPair
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -130,7 +131,7 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
         let req = context.request
         match req.formData "file" with
         | Choice1Of2 filePath ->
-            printfn $"Requested file path: %s{filePath}"
+            // printfn $"Requested file path: %s{filePath}"
             match filePath with
             | filePath when File.Exists filePath -> 
                 let result = calculateHistoricalArbitrage filePath
@@ -139,14 +140,14 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
         | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())
     }
     
-// let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
-//     async {
-//         let currencyPair = Placeholder // TODO: get currency pair
-//         match currencyPair with
-//         | some pair ->
-//             return (Successful.OK "Successfully got historical arbitrage", ())
-//         | _ -> return (RequestErrors.BAD_REQUEST "Error during retrieval", ())
-//     }
+let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let currencyPair = findPairs // TODO: get currency pair
+        match currencyPair with
+        | currencyPair ->
+            return (Successful.OK "Successfully got cross-trade currency pairs", ())
+        | _ -> return (RequestErrors.BAD_REQUEST "Error during retrieval", ())
+    }
     
 let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
@@ -170,7 +171,7 @@ let app =
         GET >=> path "/api/strategy" >=> handleRequest getTradingParameters
         POST >=> path "/api/trading" >=> handleRequest toggleTrading
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
-        // GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
+        GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
     ]
 
