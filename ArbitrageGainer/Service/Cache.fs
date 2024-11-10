@@ -1,6 +1,6 @@
-module M2.Service.Cache
+module Service.Cache
 
-open M2.Core.Models
+open Core.Models
 open Microsoft.FSharp.Collections
 
 // Messages that the Cache Agent can process

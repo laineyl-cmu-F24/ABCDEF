@@ -1,12 +1,13 @@
 module MarketData
 
 open System
-open global.Models
-open global.Workflow
-open global.Interfaces
-open global.WebSocketClient
+open Core.Models
+open Service.Workflow
+open Core.Interfaces
+open Infrastructure.WebSocketClient
 
-let getRealTimeData =
+let toggleRealTimeData flag=
+    
     let uri = Uri("wss://socket.polygon.io/crypto")
     let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
     
@@ -28,18 +29,29 @@ let getRealTimeData =
     // Create an instance of IWebSocketClient
     let webSocketClient = WebSocketClient(uri, apiKey) :> IWebSocketClient
     
-    let result =
-        runTradingWorkflow tradingParams crossTradedCryptos webSocketClient |> Async.RunSynchronously
-    
-    match result with
-    | Ok () ->
-        printfn "WebSocket client started successfully."
-        0
-    | Error errMsg ->
-        match errMsg with
-        | ConnectionError msg -> printfn "Connection error: %s" msg
-        | AuthenticationError msg -> printfn "Authentication error: %s" msg
-        | SubscriptionError msg -> printfn "Subscription error: %s" msg
-        | DataError msg -> printfn "Data error: %s" msg
-        1
-    
+    match flag with
+    | false ->
+                let closeResult = webSocketClient.Close() |> Async.RunSynchronously
+                match closeResult with
+                | Ok () ->
+                    printfn "WebSocket client started successfully."
+                    0
+                | _ ->
+                    printfn "Error during close"
+                    1
+                
+    | true ->
+        let result =
+            runTradingWorkflow tradingParams crossTradedCryptos webSocketClient |> Async.RunSynchronously
+            
+        match result with
+        | Ok () ->
+            printfn "WebSocket client started successfully."
+            0
+        | Error errMsg ->
+            match errMsg with
+            | ConnectionError msg -> printfn "Connection error: %s" msg
+            | AuthenticationError msg -> printfn "Authentication error: %s" msg
+            | SubscriptionError msg -> printfn "Subscription error: %s" msg
+            | DataError msg -> printfn "Data error: %s" msg
+            1

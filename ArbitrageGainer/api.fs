@@ -8,6 +8,8 @@ open Suave.Filters
 open Historical
 open Metric
 open CrossTradedCurrencyPair
+open MarketData
+open Infrastructure.WebSocketClient
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -118,11 +120,13 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
         match currTradingState.IsTradingActive with
         | false ->
             let! updateState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, reply))
-            // TODO: Add subscription to data stream
+            
+            let result = toggleRealTimeData true
             return (Successful.OK "Trading started", ())
         | true ->
             let! updateState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(false, reply))
-            // TODO: Unsubscribe to data stream
+            
+            let result = toggleRealTimeData false
             return (Successful.OK "Trading stopped", ())
     }
     

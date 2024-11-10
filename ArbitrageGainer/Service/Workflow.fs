@@ -1,11 +1,11 @@
-module M2.Service.Workflow
+module Service.Workflow
 
-open M2.Service.Cache
-open M2.Core.Models
-open M2.Core.Interfaces
-open M2.Core.ArbitrageAnalysis
-open M2.Core.Helper
-open M2.Core.ParsingMessage
+open Service.Cache
+open Core.Models
+open Core.Interfaces
+open Core.ArbitrageAnalysis
+open Core.Helper
+open Core.ParsingMessage
 
 let runTradingWorkflow tradingParams crossTradedSet (webSocketClient: IWebSocketClient): Async<Result<unit, DomainError>> =
     let cacheAgent = createCacheAgent ()

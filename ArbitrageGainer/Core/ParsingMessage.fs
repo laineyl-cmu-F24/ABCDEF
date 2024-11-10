@@ -1,4 +1,4 @@
-module ParsingMessage
+module Core.ParsingMessage
 
 open System
 open System.Text.Json
