@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {}
+    "/Users/lainey/Desktop/F#/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {}
   },
   "projects": {
-    "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {
+    "/Users/lainey/Desktop/F#/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
+        "projectUniqueName": "/Users/lainey/Desktop/F#/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
         "projectName": "ArbitrageGainer",
-        "projectPath": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
-        "packagesPath": "/Users/pasmac/.nuget/packages/",
-        "outputPath": "/Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/obj/",
+        "projectPath": "/Users/lainey/Desktop/F#/ABCDEF/ArbitrageGainer/ArbitrageGainer.fsproj",
+        "packagesPath": "/Users/lainey/.nuget/packages/",
+        "outputPath": "/Users/lainey/Desktop/F#/ABCDEF/ArbitrageGainer/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/pasmac/.nuget/NuGet/NuGet.Config"
+          "/Users/lainey/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net6.0"
@@ -43,6 +43,11 @@
             "FSharp.Data": {
               "target": "Package",
               "version": "[6.4.0, )",
+              "generatePathProperty": true
+            },
+            "Giraffe": {
+              "target": "Package",
+              "version": "[7.0.2, )",
               "generatePathProperty": true
             },
             "Suave": {
