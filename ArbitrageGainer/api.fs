@@ -48,7 +48,7 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
             let! message = inbox.Receive()
             match message with
             | SetTradingParameters (p, reply) ->
-                printfn $"Current State: %A{state}"
+                // printfn $"Current State: %A{state}"
                 let updatedState = { state with TradingParams = Some p }
                 reply.Reply(updatedState)
                 return! loop updatedState
@@ -90,14 +90,26 @@ let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
                 PnLThreshold = if String.IsNullOrWhiteSpace pnlThreshold then None else Some (decimal pnlThreshold)
             }
             let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(parameters, reply))
-            printfn $"Updated State: %A{updatedState}"
+            // printfn $"Updated State: %A{updatedState}"
             return (Successful.OK "Trading parameters updated successfully", updatedState)
         | _ -> return (RequestErrors.BAD_REQUEST "Invalid parameters provided", initialState)
+    }
+    
+let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let! currentState = stateAgent.PostAndAsyncReply(fun reply -> GetTradingParameters reply)
+        match currentState.TradingParams with
+        | Some tradingParams ->
+            let json = System.Text.Json.JsonSerializer.Serialize(tradingParams)
+            return (Successful.OK json, ())
+        | None ->
+            return (RequestErrors.NOT_FOUND "Error when getting trading parameters", ())
     }
 
 let app =
     choose [
         POST >=> path "/api/strategy" >=> handleRequest setTradingParameters
+        GET >=> path "/api/strategy" >=> handleRequest getTradingParameters
     ]
 
 startWebServer defaultConfig app
