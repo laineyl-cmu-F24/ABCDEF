@@ -34,3 +34,9 @@
 /Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.dll
 /Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.pdb
 /Users/pasmac/RiderProjects/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.genruntimeconfig.cache
+/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.fsproj.AssemblyReference.cache
+/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.AssemblyInfoInputs.cache
+/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.AssemblyInfo.fs
+/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.fsproj.CoreCompileInputs.cache
+/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.dll
+/Users/ranfang/Desktop/18656-F24/group/ABCDEF/ArbitrageGainer/obj/Debug/net6.0/ArbitrageGainer.pdb

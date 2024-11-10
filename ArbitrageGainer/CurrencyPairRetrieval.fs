@@ -25,7 +25,7 @@ let convertPair (pair: string) (separator: string) =
 
 (* --- Bitfinex --- *)
 type BitfinexPairs = JsonProvider<"https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange">
-let getBitfinexPairs () =
+let getBitfinexPairs =
     BitfinexPairs.GetSamples()
     |> Seq.concat
 
@@ -45,7 +45,7 @@ let processBitfinexPairs (bitfinexData: seq<string>) =
 
 (* ----- Bitstamp ----- *) 
 type BitstampPairs = JsonProvider<"https://www.bitstamp.net/api/v2/ticker/">
-let getBitstampPairs () =
+let getBitstampPairs =
     BitstampPairs.GetSamples()
     |> Array.toSeq
 // Function to process Bitstamp pairs
@@ -60,19 +60,15 @@ let processBitstampPairs (bitstampData: seq<BitstampPairs.Root>) =
 (* ----- Kraken ----- *)
 // There is an extra "error" empty field in Kraken response, so it needs additional process
 type KrakenPairs = JsonProvider<"https://api.kraken.com/0/public/AssetPairs">
-type KrakenElem = JsonProvider<"""{"altname":"1INCHEUR","wsname":"1INCH/EUR",
-                                   "aclass_base":"currency","base":"1INCH",
-                                   "aclass_quote":"currency","quote":"ZEUR",
-                                   "lot":"unit","cost_decimals":5,"pair_decimals":3,
-                                   "lot_decimals":8,"lot_multiplier":1,"leverage_buy":[],"leverage_sell":[],
-                                   "fees":[[0,0.4],[10000,0.35],[50000,0.24],[100000,0.22],[250000,0.2],[500000,0.18],
-                                   [1000000,0.16],[2500000,0.14],[5000000,0.12],[10000000,0.1]],
-                                   "fees_maker":[[0,0.25],[10000,0.2],[50000,0.14],[100000,0.12],[250000,0.1],
-                                   [500000,0.08],[1000000,0.06],[2500000,0.04],[5000000,0.02],[10000000,0]],
-                                   "fee_volume_currency":"ZUSD","margin_call":80,"margin_stop":40,
-                                   "ordermin":"11","costmin":"0.45","tick_size":"0.001","status":"online"}""">
+type KrakenElem = JsonProvider<"""
+    {"altname":"1INCHEUR","wsname":"1INCH/EUR","aclass_base":"currency","base":"1INCH","aclass_quote":"currency",
+    "quote":"ZEUR","lot":"unit","cost_decimals":5,"pair_decimals":3,"lot_decimals":8,"lot_multiplier":1,
+    "leverage_buy":[],"leverage_sell":[],"fees":[[0,0.4],[10000,0.35],[50000,0.24],[100000,0.22],[250000,0.2],[500000,0.18],[1000000,0.16],[2500000,0.14],[5000000,0.12],[10000000,0.1]],
+    "fees_maker":[[0,0.25],[10000,0.2],[50000,0.14],[100000,0.12],[250000,0.1],[500000,0.08],[1000000,0.06],[2500000,0.04],[5000000,0.02],[10000000,0]],
+    "fee_volume_currency":"ZUSD","margin_call":80,"margin_stop":40,"ordermin":"11","costmin":"0.45","tick_size":"0.001","status":"online"}
+    """>
 // Function to load and parse Kraken pairs, accessing only the "result" field
-let getKrakenPairs () =
+let getKrakenPairs =
     let response = Http.RequestString("https://api.kraken.com/0/public/AssetPairs")
     let parsed = KrakenPairs.Parse(response).JsonValue
     match parsed.TryGetProperty("result") with
@@ -99,6 +95,13 @@ let findCrossTradedPairs (bitfinexPairs: seq<string>) (bitstampPairs: seq<string
     |> Seq.countBy id
     |> Seq.filter (fun (_, count) -> count >= 2)
     |> Seq.map fst
+
+let processedBitfinexPairs = processBitfinexPairs getBitfinexPairs
+let processedBitstampPairs = processBitstampPairs getBitstampPairs
+let processedKrakenPairs = processKrakenPairs getKrakenPairs
+
+let res = findCrossTradedPairs processedBitfinexPairs processedBitstampPairs processedKrakenPairs
+printfn "%A" res
 
 
 
