@@ -1,8 +1,11 @@
 module api
 open System
+open System.IO
 open Suave
 open Suave.Operators
 open Suave.Filters
+
+open Historical
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -33,9 +36,10 @@ type SystemState = {
 
 type AgentMessage =
     | SetTradingParameters of TradingParameters * AsyncReplyChannel<SystemState>
-    | GetTradingParameters of AsyncReplyChannel<SystemState>
-    | AddTradeRecord of TradeRecord * AsyncReplyChannel<SystemState>
-
+    | GetCurrentState of AsyncReplyChannel<SystemState>
+    | ToggleTrading of bool * AsyncReplyChannel<SystemState>
+    
+    
 let initialState = {
     TradingParams = None
     IsTradingActive = false
@@ -52,11 +56,11 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
                 let updatedState = { state with TradingParams = Some p }
                 reply.Reply(updatedState)
                 return! loop updatedState
-            | GetTradingParameters reply ->
+            | GetCurrentState reply ->
                 reply.Reply(state)
                 return! loop state
-            | AddTradeRecord (trade, reply) ->
-                let updatedState = { state with TradeHistory = trade :: state.TradeHistory }
+            | ToggleTrading (isActive, reply) ->
+                let updatedState = { state with IsTradingActive = isActive }
                 reply.Reply(updatedState)
                 return! loop updatedState
         }
@@ -97,7 +101,7 @@ let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
     
 let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
-        let! currentState = stateAgent.PostAndAsyncReply(fun reply -> GetTradingParameters reply)
+        let! currentState = stateAgent.PostAndAsyncReply(GetCurrentState) 
         match currentState.TradingParams with
         | Some tradingParams ->
             let json = System.Text.Json.JsonSerializer.Serialize(tradingParams)
@@ -105,11 +109,61 @@ let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
         | None ->
             return (RequestErrors.NOT_FOUND "Error when getting trading parameters", ())
     }
+    
+let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
+        match currTradingState.IsTradingActive with
+        | false ->
+            let! updateState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, reply))
+            // TODO: Add subscription to data stream
+            return (Successful.OK "Trading started", ())
+        | true ->
+            let! updateState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(false, reply))
+            // TODO: Unsubscribe to data stream
+            return (Successful.OK "Trading stopped", ())
+    }
+    
+let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let req = context.request
+        match req.formData "file" with
+        | Choice1Of2 filePath ->
+            printfn $"Requested file path: %s{filePath}"
+            match filePath with
+            | filePath when File.Exists filePath -> 
+                let result = calculateHistoricalArbitrage filePath
+                return (Successful.OK "Successfully got historical arbitrage", ())
+            | _ -> return (RequestErrors.NOT_FOUND "File not found", ())
+        | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())
+    }
+    
+let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let currencyPair = Placeholder // TODO: get currency pair
+        match currencyPair with
+        | some pair ->
+            return (Successful.OK "Successfully got historical arbitrage", ())
+        | _ -> return (RequestErrors.BAD_REQUEST "Error during retrieval", ())
+    }
+    
+let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let annualReturn = Placeholder // TODO: get annual return
+        match annualReturn with
+        | some pair ->
+            return (Successful.OK "Successfully got annual return", ())
+        | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())
+    }
 
 let app =
     choose [
         POST >=> path "/api/strategy" >=> handleRequest setTradingParameters
         GET >=> path "/api/strategy" >=> handleRequest getTradingParameters
+        POST >=> path "/api/trading" >=> handleRequest toggleTrading
+        GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
+        GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
+        GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
     ]
 
 startWebServer defaultConfig app
