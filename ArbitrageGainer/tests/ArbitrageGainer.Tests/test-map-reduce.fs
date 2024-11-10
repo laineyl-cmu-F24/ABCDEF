@@ -26,7 +26,7 @@ let ``reduceHistoricalData should detect arbitrage opportunities`` () =
     // Arrange: Create sample mapped data with opportunities for testing
     let sampleMappedData = [
         "CHZ-USD", [
-            (1, { ExchangeID = 1; CurrencyPair = "CHZ-USD"; TimeStamp = 1690409119847L; bid = 0.08M; ask = 0.075M }, { ExchangeID = 1; CurrencyPair = "CHZ-USD"; TimeStamp = 1690409119847L; bid = 0.08M; ask = 0.075M })
+            (1, { ExchangeID = 1; CurrencyPair = "CHZ-USD"; TimeStamp = 1690409119847L; bid = 0.09M; ask = 0.075M }, { ExchangeID = 1; CurrencyPair = "CHZ-USD"; TimeStamp = 1690409119847L; bid = 0.09M; ask = 0.075M })
             (2, { ExchangeID = 2; CurrencyPair = "CHZ-USD"; TimeStamp = 1690409119847L; bid = 0.077M; ask = 0.074M }, { ExchangeID = 2; CurrencyPair = "CHZ-USD"; TimeStamp = 1690409119847L; bid = 0.077M; ask = 0.074M })
         ]
         "BTC-USD", [
