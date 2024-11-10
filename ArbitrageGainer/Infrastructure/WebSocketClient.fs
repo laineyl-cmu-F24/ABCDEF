@@ -13,7 +13,7 @@ type WebSocketClient(uri, apiKey) =
     let wsClient = new ClientWebSocket()
     
     // Define a function to send a message to the WebSocket
-    let sendJsonMessage message : Async<Result<unit, DomainError>> =
+    let sendJsonMessage message =
             async {
                 try
                     let messageJson = JsonSerializer.Serialize(message)
@@ -34,7 +34,7 @@ type WebSocketClient(uri, apiKey) =
         with ex -> return Error (ConnectionError ex.Message)
     }
             
-    let receiveMessage () : Async<Result<string, DomainError>> =
+    let receiveMessage () =
         async {
             let buffer = Array.zeroCreate 10024
             let segment = new ArraySegment<byte>(buffer)
@@ -57,7 +57,7 @@ type WebSocketClient(uri, apiKey) =
                 return Error (DataError ex.Message)
         }
      
-    let close () : Async<Result<unit, DomainError>> =
+    let close ()=
         async {
             try
                 do! wsClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None) |> Async.AwaitTask
@@ -71,5 +71,7 @@ type WebSocketClient(uri, apiKey) =
         member _.SendMessage (message: 'T) = sendJsonMessage message
         member _.ReceiveMessage () = receiveMessage ()
         member _.Close () = close ()
+        member _.IsOpen =
+            wsClient.State = WebSocketState.Open
 
            

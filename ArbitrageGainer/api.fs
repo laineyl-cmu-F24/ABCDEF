@@ -9,6 +9,8 @@ open Historical
 open Metric
 open CrossTradedCurrencyPair
 open MarketData
+open Core.Models
+open Core.Interfaces
 open Infrastructure.WebSocketClient
 
 type TradingParameters = {
@@ -22,32 +24,25 @@ type TradingParameters = {
     PnLThreshold: decimal option
 }
 
-type TradeRecord = {
-    CurrencyPair: string
-    BuyExchange: string
-    SellExchange: string
-    BuyPrice: decimal
-    SellPrice: decimal
-    Volume: decimal
-    Timestamp: DateTime
-}
-
 type SystemState = {
     TradingParams: TradingParameters option
     IsTradingActive: bool
     TradeHistory: TradeRecord list
+    WebSocketClient: IWebSocketClient option
 }
 
 type AgentMessage =
     | SetTradingParameters of TradingParameters * AsyncReplyChannel<SystemState>
     | GetCurrentState of AsyncReplyChannel<SystemState>
-    | ToggleTrading of bool * AsyncReplyChannel<SystemState>
+    | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
+    | ToggleTrading of bool * IWebSocketClient option * AsyncReplyChannel<SystemState>
     
     
 let initialState = {
     TradingParams = None
     IsTradingActive = false
     TradeHistory = []
+    WebSocketClient = None
 }
 
 let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
@@ -63,8 +58,12 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
             | GetCurrentState reply ->
                 reply.Reply(state)
                 return! loop state
-            | ToggleTrading (isActive, reply) ->
-                let updatedState = { state with IsTradingActive = isActive }
+            | GetTradeHistory (newTrades, reply) ->
+                let updatedState = { state with TradeHistory = newTrades }
+                reply.Reply(updatedState)
+                return! loop updatedState
+            | ToggleTrading (isActive, wsClientOpt, reply) ->
+                let updatedState = { state with IsTradingActive = isActive; WebSocketClient = wsClientOpt; }
                 reply.Reply(updatedState)
                 return! loop updatedState
         }
@@ -114,20 +113,53 @@ let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
             return (RequestErrors.NOT_FOUND "Error when getting trading parameters", ())
     }
     
-let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+
+let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext)  =
     async {
         let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
         match currTradingState.IsTradingActive with
         | false ->
-            let! updateState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, reply))
-            
-            let result = toggleRealTimeData true
-            return (Successful.OK "Trading started", ())
+            match currTradingState.TradingParams with
+            |Some tradingParams ->
+                let numOfCrypto = tradingParams.NumOfCrypto
+                //let tradeHistory = currTradingState.TradeHistory
+                //need to be change with the above line
+                let tradeHistory = [
+                    { Pair = "BTC-USD"; OpportunityCount = 5 }
+                    { Pair = "ETH-USD"; OpportunityCount = 3 }
+                    { Pair = "LTC-USD"; OpportunityCount = 8 }
+                    { Pair = "XRP-USD"; OpportunityCount = 2 }
+                    { Pair = "BCH-USD"; OpportunityCount = 6 }
+                ]
+                //need to be change with actual
+                let crossTradedCryptos = Set.ofList ["BTC-USD"; "ETH-USD"; "LTC-USD"; "XRP-USD"; "BCH-USD"]
+                let uri = Uri("wss://socket.polygon.io/crypto")
+                let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
+                let webSocketClient = WebSocketClient(uri, apiKey) :> IWebSocketClient
+                Async.Start(async {
+                    let! result = toggleRealTimeData true numOfCrypto crossTradedCryptos tradeHistory webSocketClient
+                    match result with
+                    | Ok () ->
+                        printfn "Trading workflow completed successfully."
+                    | Error e ->
+                        printfn "Trading workflow failed with error: %A" e
+                })
+                let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some webSocketClient, reply))
+                return (Successful.OK "Trading started successfully.", ())
+            | None ->
+                return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
         | true ->
-            let! updateState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(false, reply))
-            
-            let result = toggleRealTimeData false
-            return (Successful.OK "Trading stopped", ())
+            match currTradingState.WebSocketClient with
+            | Some webSocketClient ->
+                let! closeResult = webSocketClient.Close()
+                match closeResult with
+                | Ok () ->
+                    let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(false, None, reply))
+                    return (Successful.OK "Trading stopped.", ())
+                | Error e ->
+                    let! _ = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some webSocketClient, reply))
+                    return (RequestErrors.BAD_REQUEST "Failed to stop trading", ())
+            |None -> return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
     }
     
 let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
@@ -139,6 +171,13 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
             match filePath with
             | filePath when File.Exists filePath -> 
                 let result = calculateHistoricalArbitrage filePath
+                let tradeRecords =
+                    result
+                    |> Seq.map (fun (pair, opportunityCount) ->
+                        { Pair =  pair; OpportunityCount = opportunityCount }
+                    )
+                    |> Seq.toList
+                let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
                 return (Successful.OK "Successfully got historical arbitrage", ())
             | _ -> return (RequestErrors.NOT_FOUND "File not found", ())
         | _ -> return (RequestErrors.BAD_REQUEST "Error during calculation", ())

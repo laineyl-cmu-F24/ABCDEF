@@ -83,3 +83,4 @@ let calculateHistoricalArbitrage file=
     let reduceResult = reduceHistoricalData mapResult
     
     reduceResult |> Seq.iter(fun (pair, opportunities) -> printfn $"{pair}, {opportunities} opportunities")
+    reduceResult
