@@ -1,8 +1,8 @@
-module Core.ParsingMessage
+module M2.Core.ParsingMessage
 
 open System
 open System.Text.Json
-open Core.Models
+open M2.Core.Models
 
 let parseMessage(json: string) : ParseResult =
     try
@@ -21,7 +21,7 @@ let parseMessage(json: string) : ParseResult =
                     let askPrice = message.GetProperty("ap").GetDecimal()
                     let timestamp = message.GetProperty("t").GetInt64()
                     let quote = {
-                        Symbol =  pair
+                        Symbol = CryptoSymbol pair
                         Exchange = exchangeId.ToString()
                         BidPrice = bidPrice
                         AskPrice = askPrice

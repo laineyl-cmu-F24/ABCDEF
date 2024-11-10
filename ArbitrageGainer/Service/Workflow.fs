@@ -3,26 +3,28 @@ module Service.Workflow
 open Service.Cache
 open Core.Models
 open Core.Interfaces
-open Core.ArbitrageAnalysis
 open Core.Helper
 open Core.ParsingMessage
 
-let runTradingWorkflow tradingParams crossTradedSet (webSocketClient: IWebSocketClient): Async<Result<unit, DomainError>> =
+let runTradingWorkflow numOfCrypto (crossTradedCryptos: Set<string>) (webSocketClient: IWebSocketClient) (tradeHistory: TradeRecord list)=
     let cacheAgent = createCacheAgent ()
+
+    // Step 1: Get top N aarbitrage opportunities cryptocurrencies 
+    let topNCryptosResult =
+        tradeHistory
+        |> List.sortByDescending (fun record -> record.OpportunityCount)
+        |> List.truncate numOfCrypto
+        |> List.map (fun record -> record.Pair)
     
-    // Step 1: Retrieve historical arbitrage data
-    let historicalDataResult = retrieveHistoricalData ()
+    if List.length tradeHistory < numOfCrypto then
+        printfn "Warning: Requested top %d cryptos, but only %d available in trade history." numOfCrypto (List.length tradeHistory)
     
-    // Step 2: Get top N aarbitrage opportunities cryptocurrencies 
-    let topNCryptosResult = historicalDataResult |> map (getTopNCurrencies tradingParams.NumOfCryptos)
-    
-    // Step 3: Check with cross-traded cryptocurrencies
-    let symbolsResult =
+    // Step 2: Check with cross-traded cryptocurrencies
+    let filteredCryptos =
         topNCryptosResult
-        |> map (filterCrossTraded crossTradedSet)
-        |> map (List.map (fun (CryptoSymbol symbol) -> symbol))
+        |> List.filter (fun pair -> crossTradedCryptos.Contains pair)
     
-    // Step 4: Use the webSocketClient to send messages and receive data
+    // Step 3: Use the webSocketClient to send messages and receive data
     let connectAndReceive symbols =
         async{
             let! connectResult = webSocketClient.Connect()
@@ -44,32 +46,32 @@ let runTradingWorkflow tradingParams crossTradedSet (webSocketClient: IWebSocket
                             printfn "Subscription successful."
                             
                             let rec receiveLoop() = async {
-                                let! receiveResult = webSocketClient.ReceiveMessage()
-                                match receiveResult with
-                                |Error e -> return Error e
-                                |Ok message ->
-                                    match parseMessage message with
-                                    | QuoteReceived quote ->
-                                        cacheAgent.Post(UpdateCache quote)
-                                        
-                                        printfn "Printing cache after update:"
-                                        cacheAgent.Post(PrintCache)
-                                        
-                                        return! receiveLoop()
-                                    | StatusReceived statusMsg ->
-                                        return! receiveLoop()
-                                    |ParseError err -> return! receiveLoop()
-                            }
+                                match webSocketClient.IsOpen with
+                                | false ->
+                                    printfn "WebSocket is closed, stopping receive loop."
+                                    return Ok ()
+                                | true ->
+                                    let! receiveResult = webSocketClient.ReceiveMessage()
+                                    match receiveResult with
+                                    |Error e -> return Error e
+                                    |Ok message ->
+                                        match parseMessage message with
+                                        | QuoteReceived quote ->
+                                            cacheAgent.Post(UpdateCache quote)
+                                            printfn "Printing cache after update:"
+                                            cacheAgent.Post(PrintCache)
+                                            return! receiveLoop()
+                                        | StatusReceived statusMsg ->
+                                            return! receiveLoop()
+                                        |ParseError err -> return! receiveLoop()
+                                }
                             let! receiveResult = receiveLoop()
                             return receiveResult        
         }
     
     async {
-        match symbolsResult with
-        | Error e -> return Error e
-        | Ok symbols ->
-            let! connectResult = connectAndReceive symbols
-            return connectResult
+        let! connectResult = connectAndReceive filteredCryptos
+        return connectResult
     }
         
         

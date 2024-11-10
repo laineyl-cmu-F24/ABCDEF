@@ -1,13 +1,16 @@
-module Core.Models
+module M2.Core.Models
+
 open System
 
-type TradeRecord = {
-    Pair: string
-    OpportunityCount: int
+type CryptoSymbol = CryptoSymbol of string
+type ArbitrageOpportunityCount = ArbitrageOpportunityCount of int
+type CryptoArbitrage = {
+    Symbol: CryptoSymbol
+    OpportunityCount: ArbitrageOpportunityCount
 }
 
 type Quote = {
-    Symbol: string
+    Symbol: CryptoSymbol
     Exchange: string
     BidPrice: decimal
     AskPrice: decimal
@@ -31,12 +34,17 @@ type DomainError =
     | SubscriptionError of string
     | DataError of string
 
-type DomainResult<'Success> = 
-    | Ok of 'Success
-    | Error of DomainError
+
+type TradingParameters = {
+    NumOfCryptos: int
+    MinPriceSpread: decimal
+    MinTransactionProfit: decimal
+    MaxTradingValue: decimal
+    InitialInvestmentAmount: decimal
+    Email: string
+}
 
 type Message = {
     action: string
     params: string
 }
-

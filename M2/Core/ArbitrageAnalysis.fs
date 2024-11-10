@@ -1,6 +1,6 @@
-module Core.ArbitrageAnalysis
+module M2.Core.ArbitrageAnalysis
 
-open Core.Models
+open M2.Core.Models
 
 // Retrieve historical arbitrage data
 let retrieveHistoricalData (data) : Result<CryptoArbitrage list, DomainError> =
