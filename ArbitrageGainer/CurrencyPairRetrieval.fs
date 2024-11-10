@@ -101,12 +101,15 @@ let findCrossTradedPairs (bitfinexPairs: seq<string>) (bitstampPairs: seq<string
     |> Seq.filter (fun (_, count) -> count >= 2)
     |> Seq.map fst
 
-let findPairs = 
+let findPairs =
     let processedBitfinexPairs = processBitfinexPairs getBitfinexPairs
     let processedBitstampPairs = processBitstampPairs getBitstampPairs
     let processedKrakenPairs = processKrakenPairs getKrakenPairs
     let res = findCrossTradedPairs processedBitfinexPairs processedBitstampPairs processedKrakenPairs
     printfn "%A" res
+    res
+        
+        
 
 
 
