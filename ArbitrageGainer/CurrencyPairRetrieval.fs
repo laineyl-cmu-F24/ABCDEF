@@ -19,17 +19,21 @@ open System
 
 
 // Filter unction to select valid pairs
-let isValidPair (pair: string) (separator: string) =
-    let parts = pair.Split( separator , StringSplitOptions.RemoveEmptyEntries)
+let isValidPair (separator: string) (pair: string) =
+    let parts =
+        pair.Split( separator , StringSplitOptions.RemoveEmptyEntries)
+    // printfn "parts %A" parts
     parts.Length = 2 && parts[0].Length = 3 && parts[1].Length = 3
 
-let convertPair (pair: string) (separator: string) =
+let convertPair (separator: string) (pair: string) =
     let parts = pair.Split( separator , StringSplitOptions.RemoveEmptyEntries)
     parts[0].ToUpper() + "-" + parts[1].ToUpper()
-
+    
+type BitfinexPairs = JsonProvider<"https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange">
+type BitstampPairs = JsonProvider<"https://www.bitstamp.net/api/v2/ticker/">
+type KrakenPairs = JsonProvider<"https://api.kraken.com/0/public/AssetPairs">
 
 (* ----- Bitfinex ----- *)
-type BitfinexPairs = JsonProvider<"https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange">
 let getBitfinexPairs =
     BitfinexPairs.GetSamples()
     |> Seq.concat
@@ -41,30 +45,30 @@ let processBitfinexPairs (bitfinexData: seq<string>) =
         | [| _; _ |] -> pair // Already in "currency1:currency2" format, keep as is
         | [| single |] when single.Length = 6 ->
             // Convert to "currency1:currency2" format
-            single.Substring(0, 3) + ":" + single.Substring(3, 6)
+            single[0..2] + ":" + single[3..5]
         | _ -> "" // Invalid format, output empty string to be filtered out
     )
     |> Seq.filter (fun pair -> pair <> "" && isValidPair pair ":") // Remove invalid pairs
     |> Seq.map (convertPair ":")
+    |> Seq.filter (fun converted -> converted <> "")
     |> Seq.distinct
 
 (* ----- Bitstamp ----- *) 
-type BitstampPairs = JsonProvider<"https://www.bitstamp.net/api/v2/ticker/">
 let getBitstampPairs =
     BitstampPairs.GetSamples()
     |> Array.toSeq
+    
 // Function to process Bitstamp pairs
 let processBitstampPairs (bitstampData: seq<BitstampPairs.Root>) =
     bitstampData
     |> Seq.map (fun data -> data.Pair)
     |> Seq.filter (isValidPair "/")
     |> Seq.map (convertPair "/")
+    |> Seq.filter (fun converted -> converted <> "")
     |> Seq.distinct
 
 
 (* ----- Kraken ----- *)
-// There is an extra "error" empty field in Kraken response, so it needs additional process
-type KrakenPairs = JsonProvider<"https://api.kraken.com/0/public/AssetPairs">
 type KrakenElem = JsonProvider<"""
     {"altname":"1INCHEUR","wsname":"1INCH/EUR","aclass_base":"currency","base":"1INCH","aclass_quote":"currency",
     "quote":"ZEUR","lot":"unit","cost_decimals":5,"pair_decimals":3,"lot_decimals":8,"lot_multiplier":1,
@@ -74,7 +78,14 @@ type KrakenElem = JsonProvider<"""
     """>
 // Function to load and parse Kraken pairs, accessing only the "result" field
 let getKrakenPairs =
-    let response = Http.RequestString("https://api.kraken.com/0/public/AssetPairs")
+    // let response = Http.RequestString("https://api.kraken.com/0/public/AssetPairs")
+    let response =
+        try
+            Http.RequestString("https://api.kraken.com/0/public/AssetPairs")
+        with
+        | ex -> 
+            printfn "Error requesting data: %s" ex.Message
+            ""
     let parsed = KrakenPairs.Parse(response).JsonValue
     match parsed.TryGetProperty("result") with
         | Some result -> 
@@ -82,15 +93,19 @@ let getKrakenPairs =
             |> Array.map snd
             |> Array.toSeq
             |> Seq.map (fun data ->
+                            // printfn "Raw asset pair data: %A" data
                             let parsed = KrakenElem.Parse(data.ToString())
-                            parsed)
+                            parsed
+                            )
         | None -> Seq.empty
+         
     
 let processKrakenPairs (krakenData: seq<KrakenElem.Root>) =
     krakenData
     |> Seq.map (fun data -> data.Wsname)
     |> Seq.filter (isValidPair "/")
     |> Seq.map (convertPair "/")
+    |> Seq.filter (fun converted -> converted <> "")
     |> Seq.distinct
 
 let findCrossTradedPairs (bitfinexPairs: seq<string>) (bitstampPairs: seq<string>) (krakenPairs: seq<string>) =
@@ -101,15 +116,16 @@ let findCrossTradedPairs (bitfinexPairs: seq<string>) (bitstampPairs: seq<string
     |> Seq.filter (fun (_, count) -> count >= 2)
     |> Seq.map fst
 
-let findPairs =
+let findPairs = 
     let processedBitfinexPairs = processBitfinexPairs getBitfinexPairs
+    // printfn "processedBitfinexPairs %A" processedBitfinexPairs
     let processedBitstampPairs = processBitstampPairs getBitstampPairs
+    // printfn "processedBitstampPairs %A" processedBitstampPairs
     let processedKrakenPairs = processKrakenPairs getKrakenPairs
+    // printfn "processedKrakenPairs %A" processedKrakenPairs
     let res = findCrossTradedPairs processedBitfinexPairs processedBitstampPairs processedKrakenPairs
-    printfn "%A" res
+    printfn "currency pairs: %A" res
     res
-        
-        
 
 
 
