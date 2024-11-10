@@ -43,7 +43,7 @@ let rec AnnualizedMetric (tradingParameters: TradingParameters) =
     let pl = 100M 
     match validateInitialAmount initialAmount with
     | Error e -> Error e
-    | Ok amount -> 
+    | Ok validAmount -> 
         match validateTimeInterval startTime endTime with
         | Error e -> Error e
         | Ok (validStart, validEnd) ->
