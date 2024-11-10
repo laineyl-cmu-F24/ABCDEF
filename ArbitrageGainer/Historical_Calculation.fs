@@ -77,11 +77,9 @@ let reduceHistoricalData historicalData =
     |> Seq.groupBy fst
     |> Seq.map (fun (pair, opportunities) -> (pair, Seq.length opportunities))
     
-let analyze =
-    let data = loadHistoricalData "/Users/lainey/Desktop/F#/Milestone1/Milestone1/historicalData.txt"
+let calculateHistoricalArbitrage file=
+    let data = loadHistoricalData file
     let mapResult = mapHistoricalData data
     let reduceResult = reduceHistoricalData mapResult
     
     reduceResult |> Seq.iter(fun (pair, opportunities) -> printfn $"{pair}, {opportunities} opportunities")
-    
-analyze
