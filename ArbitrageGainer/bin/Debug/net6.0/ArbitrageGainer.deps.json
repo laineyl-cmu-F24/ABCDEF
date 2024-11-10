@@ -10,6 +10,7 @@
         "dependencies": {
           "FSharp.Core": "6.0.7",
           "FSharp.Data": "6.4.0",
+          "Giraffe": "7.0.2",
           "Suave": "2.6.2"
         },
         "runtime": {
@@ -172,6 +173,52 @@
           }
         }
       },
+      "FSharp.SystemTextJson/1.3.13": {
+        "dependencies": {
+          "FSharp.Core": "6.0.7",
+          "System.Text.Json": "8.0.5"
+        },
+        "runtime": {
+          "lib/netstandard2.0/FSharp.SystemTextJson.dll": {
+            "assemblyVersion": "1.3.0.0",
+            "fileVersion": "1.3.13.11246"
+          }
+        }
+      },
+      "Giraffe/7.0.2": {
+        "dependencies": {
+          "FSharp.Core": "6.0.7",
+          "FSharp.SystemTextJson": "1.3.13",
+          "Giraffe.ViewEngine": "1.4.0",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1",
+          "System.Text.Json": "8.0.5"
+        },
+        "runtime": {
+          "lib/net6.0/Giraffe.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Giraffe.ViewEngine/1.4.0": {
+        "dependencies": {
+          "FSharp.Core": "6.0.7"
+        },
+        "runtime": {
+          "lib/net5.0/Giraffe.ViewEngine.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Microsoft.IO.RecyclableMemoryStream/3.0.1": {
+        "runtime": {
+          "lib/net6.0/Microsoft.IO.RecyclableMemoryStream.dll": {
+            "assemblyVersion": "3.0.1.0",
+            "fileVersion": "3.0.1.0"
+          }
+        }
+      },
       "Suave/2.6.2": {
         "dependencies": {
           "FSharp.Core": "6.0.7"
@@ -180,6 +227,38 @@
           "lib/netstandard2.1/Suave.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "2.6.2.0"
+          }
+        }
+      },
+      "System.Runtime.CompilerServices.Unsafe/6.0.0": {},
+      "System.Text.Encodings.Web/8.0.0": {
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        },
+        "runtime": {
+          "lib/net6.0/System.Text.Encodings.Web.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/browser/lib/net6.0/System.Text.Encodings.Web.dll": {
+            "rid": "browser",
+            "assetType": "runtime",
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
+      "System.Text.Json/8.0.5": {
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0",
+          "System.Text.Encodings.Web": "8.0.0"
+        },
+        "runtime": {
+          "lib/net6.0/System.Text.Json.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1024.46610"
           }
         }
       }
@@ -254,12 +333,61 @@
       "path": "fsharp.data.xml.core/6.4.0",
       "hashPath": "fsharp.data.xml.core.6.4.0.nupkg.sha512"
     },
+    "FSharp.SystemTextJson/1.3.13": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-znp8odpdkVGKVX0AvbhiXdmeMi0KJ+A4AyAQWSkfAEAe4Z4clRE+rVhrLnAGrFD1VEIUX2lsQ4o84ywpWZUSGw==",
+      "path": "fsharp.systemtextjson/1.3.13",
+      "hashPath": "fsharp.systemtextjson.1.3.13.nupkg.sha512"
+    },
+    "Giraffe/7.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-AwUqNORb9OmsqIGTAmbQtZBHoWz0yxACHA/xJqby3usUaqBUmrcz5dflVzPWUvqkulWPntwdRkQlzdt9zeEr6Q==",
+      "path": "giraffe/7.0.2",
+      "hashPath": "giraffe.7.0.2.nupkg.sha512"
+    },
+    "Giraffe.ViewEngine/1.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-gWzlp8KGDLaPHMm/xGzfLT1e9wZaJhBKhEuMsPRBSn7wAMkSgMcaqJlWl8mFGCcOOx0r9UyDJvCJJQyljYmo+g==",
+      "path": "giraffe.viewengine/1.4.0",
+      "hashPath": "giraffe.viewengine.1.4.0.nupkg.sha512"
+    },
+    "Microsoft.IO.RecyclableMemoryStream/3.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g==",
+      "path": "microsoft.io.recyclablememorystream/3.0.1",
+      "hashPath": "microsoft.io.recyclablememorystream.3.0.1.nupkg.sha512"
+    },
     "Suave/2.6.2": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-JNTsgb3FrFnvsp7G93Y9XLIGVa47fG4GZ8un/+/iMMVBTRWl8l6Rlnqjo/PsQP6NojtkrLEM4SLz9AhfQIPNag==",
       "path": "suave/2.6.2",
       "hashPath": "suave.2.6.2.nupkg.sha512"
+    },
+    "System.Runtime.CompilerServices.Unsafe/6.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg==",
+      "path": "system.runtime.compilerservices.unsafe/6.0.0",
+      "hashPath": "system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
+    },
+    "System.Text.Encodings.Web/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yev/k9GHAEGx2Rg3/tU6MQh4HGBXJs70y7j1LaM1i/ER9po+6nnQ6RRqTJn1E7Xu0fbIFK80Nh5EoODxrbxwBQ==",
+      "path": "system.text.encodings.web/8.0.0",
+      "hashPath": "system.text.encodings.web.8.0.0.nupkg.sha512"
+    },
+    "System.Text.Json/8.0.5": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0f1B50Ss7rqxXiaBJyzUu9bWFOO2/zSlifZ/UNMdiIpDYe4cY4LQQicP4nirK1OS31I43rn062UIJ1Q9bpmHpg==",
+      "path": "system.text.json/8.0.5",
+      "hashPath": "system.text.json.8.0.5.nupkg.sha512"
     }
   }
 }

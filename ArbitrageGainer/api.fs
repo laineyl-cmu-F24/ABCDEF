@@ -3,9 +3,6 @@ open System
 open Suave
 open Suave.Operators
 open Suave.Filters
-open Suave.Successful
-open Suave.RequestErrors
-open System.Collections.Generic
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -34,37 +31,47 @@ type SystemState = {
     TradeHistory: TradeRecord list
 }
 
+type AgentMessage =
+    | SetTradingParameters of TradingParameters * AsyncReplyChannel<SystemState>
+    | GetTradingParameters of AsyncReplyChannel<SystemState>
+    | AddTradeRecord of TradeRecord * AsyncReplyChannel<SystemState>
+
 let initialState = {
     TradingParams = None
     IsTradingActive = false
     TradeHistory = []
 }
 
-let toDictionary (state: SystemState) =
-    let dict = Dictionary<string, obj>()
-    match state.TradingParams with
-    | Some p ->
-        dict.Add("NumOfCrypto", box p.NumOfCrypto)
-        dict.Add("MinSpreadPrice", box p.MinSpreadPrice)
-        dict.Add("MinTransactionProfit", box p.MinTransactionProfit)
-        dict.Add("MaxTransactionValue", box p.MaxTransactionValue)
-        dict.Add("MaxTradeValue", box p.MaxTradeValue)
-        dict.Add("InitialInvestmentAmount", box p.InitialInvestmentAmount)
-        dict.Add("Email", box p.Email)
-        dict.Add("PnLThreshold", box p.PnLThreshold)
-    | None -> ()
-    dict
+let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
+    let rec loop state =
+        async {
+            let! message = inbox.Receive()
+            match message with
+            | SetTradingParameters (p, reply) ->
+                printfn $"Current State: %A{state}"
+                let updatedState = { state with TradingParams = Some p }
+                reply.Reply(updatedState)
+                return! loop updatedState
+            | GetTradingParameters reply ->
+                reply.Reply(state)
+                return! loop state
+            | AddTradeRecord (trade, reply) ->
+                let updatedState = { state with TradeHistory = trade :: state.TradeHistory }
+                reply.Reply(updatedState)
+                return! loop updatedState
+        }
+    loop initialState
+)
 
-let handleRequest func state =
+let handleRequest func =
     fun (context: HttpContext) ->
         async {
-            let! response, newState = func state context
-            let webPart = response
-            let newUserState = toDictionary newState
-            return! webPart context |> Async.map (Option.map (fun ctx -> { ctx with userState = newUserState }))
+            let! response, _ = func stateAgent context
+            return! response context
         }
-        
-let setTradingParameters (state: SystemState) (context: HttpContext) =
+
+
+let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
         let req = context.request
         match req.formData "NumOfCrypto", req.formData "MinSpreadPrice", req.formData "MinTransactionProfit",
@@ -75,33 +82,22 @@ let setTradingParameters (state: SystemState) (context: HttpContext) =
             let parameters = {
                 NumOfCrypto = int numOfCrypto
                 MinSpreadPrice = decimal minSpreadPrice
-                MinTransactionProfit =  decimal minTransactProfit
+                MinTransactionProfit = decimal minTransactProfit
                 MaxTransactionValue = decimal maxTransactVal
                 MaxTradeValue = decimal maxTradeVal 
                 InitialInvestmentAmount = decimal initialInvestment
-                Email = match email with
-                        | "" -> None
-                        | _ -> Some(email)
-                PnLThreshold = match pnlThreshold with
-                               | "" -> None
-                               | _ -> Some(decimal pnlThreshold)
+                Email = if String.IsNullOrWhiteSpace email then None else Some email
+                PnLThreshold = if String.IsNullOrWhiteSpace pnlThreshold then None else Some (decimal pnlThreshold)
             }
-            let updatedState = { state with TradingParams = Some parameters }
+            let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(parameters, reply))
             printfn $"Updated State: %A{updatedState}"
             return (Successful.OK "Trading parameters updated successfully", updatedState)
-        | _ -> return (RequestErrors.BAD_REQUEST "Invalid parameters provided", state)
+        | _ -> return (RequestErrors.BAD_REQUEST "Invalid parameters provided", initialState)
     }
 
-let app initialState =
+let app =
     choose [
-        POST >=> path "/api/strategy" >=> handleRequest setTradingParameters initialState
-        // GET >=> path "/api/strategy" >=> handleRequest getTradingParameters initialState
-        // GET >=> path "/api/currencies/cross-traded" >=> handleRequest identifyCrossTradedPairs initialState
-        // POST >=> path "/api/arbitrage/historical" >=> request (handleRequest getHistoricalArbitrage initialState)
-        // POST >=> path "/api/trading-launch" >=> handleRequest startTrading initialState
-        // POST >=> path "/api/trading-stop" >=> handleRequest stopTrading initialState
-        // GET >=> path "/api/profit-loss" >=> handleRequest calculatePnL initialState
-        // GET >=> path "/api/profit-loss/threshold-check" >=> handleRequest checkPnLThreshold initialState
+        POST >=> path "/api/strategy" >=> handleRequest setTradingParameters
     ]
-    
-startWebServer defaultConfig (app initialState)
+
+startWebServer defaultConfig app
