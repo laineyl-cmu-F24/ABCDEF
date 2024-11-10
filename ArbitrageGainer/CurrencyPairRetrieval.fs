@@ -23,7 +23,7 @@ let convertPair (pair: string) (separator: string) =
     parts[0].ToUpper() + "-" + parts[1].ToUpper()
 
 
-(* --- Bitfinex --- *)
+(* ----- Bitfinex ----- *)
 type BitfinexPairs = JsonProvider<"https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange">
 let getBitfinexPairs =
     BitfinexPairs.GetSamples()
