@@ -7,18 +7,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="54dff43b-de59-4e5d-8dc5-b754aced3c6c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Core/DatabaseInterface.fs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/UserRepository.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.ArbitrageGainer.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ArbitrageGainer.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ArbitrageGainer.fsproj" beforeDir="false" afterPath="$PROJECT_DIR$/ArbitrageGainer.fsproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Models.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Models.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CurrencyPairRetrieval.fs" beforeDir="false" afterPath="$PROJECT_DIR$/CurrencyPairRetrieval.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api.fs" beforeDir="false" afterPath="$PROJECT_DIR$/api.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/obj/project.packagespec.json" beforeDir="false" afterPath="$PROJECT_DIR$/obj/project.packagespec.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/obj/rider.project.model.nuget.info" beforeDir="false" afterPath="$PROJECT_DIR$/obj/rider.project.model.nuget.info" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/obj/rider.project.restore.info" afterDir="false" />
-    </list>
+    <list default="true" id="54dff43b-de59-4e5d-8dc5-b754aced3c6c" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
