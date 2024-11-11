@@ -181,7 +181,7 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
 let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
         try
-            let currencyPair = findPairs
+            let currencyPair = findCurrencyPairs
             return (Successful.OK "Success\n", $"Got cross-trade currency pairs: %A{currencyPair}")
         with
         | ex ->

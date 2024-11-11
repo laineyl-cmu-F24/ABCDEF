@@ -1,22 +1,8 @@
 module CrossTradedCurrencyPair
 open FSharp.Data
 open System
-
-// open MongoDB.Driver
-// open MongoDB.Bson
-
-// type = User {
-//     Id: ObjectID
-//     name: string
-//     email: string
-//     password: string
-// }
-
-// let connString = "mongodb+srv://ranf:functional123@arbitragegainer.hlllv.mongodb.net/?retryWrites=true&w=majority&appName=ArbitrageGainer"
-// let client = new MongoClient(connString)
-// let db = client.GetDatabase("product")
-// let collection = db.GetCollection<User>("users")
-
+open Core.Models
+open Core.DatabaseInterface
 
 // Filter unction to select valid pairs
 let isValidPair (separator: string) (pair: string) =
@@ -35,8 +21,12 @@ type KrakenPairs = JsonProvider<"https://api.kraken.com/0/public/AssetPairs">
 
 (* ----- Bitfinex ----- *)
 let getBitfinexPairs =
-    BitfinexPairs.GetSamples()
-    |> Seq.concat
+    try
+        let samples = BitfinexPairs.GetSamples()
+        Ok (Seq.concat samples)
+    with
+    | ex -> Error (ParseError $"Error parsing Bitfinex pairs: {ex.Message}")
+
 
 let processBitfinexPairs (bitfinexData: seq<string>) =
     bitfinexData
@@ -55,8 +45,11 @@ let processBitfinexPairs (bitfinexData: seq<string>) =
 
 (* ----- Bitstamp ----- *) 
 let getBitstampPairs =
-    BitstampPairs.GetSamples()
-    |> Array.toSeq
+    try
+        let samples = BitstampPairs.GetSamples()
+        Ok (Array.toSeq samples)
+    with
+    | ex -> Error (ParseError $"Error parsing Bitstamp pairs: {ex.Message}")
     
 // Function to process Bitstamp pairs
 let processBitstampPairs (bitstampData: seq<BitstampPairs.Root>) =
@@ -79,29 +72,53 @@ type KrakenElem = JsonProvider<"""
 // Function to load and parse Kraken pairs, accessing only the "result" field
 let getKrakenPairs =
     // let response = Http.RequestString("https://api.kraken.com/0/public/AssetPairs")
+    let parseKrakenResponse (responseBody: string) =
+        try
+            let parsed = KrakenPairs.Parse(responseBody).JsonValue
+            Ok parsed
+        with
+        | ex -> Error (ParseError $"Error parsing Kraken response: {ex.Message}")
+    let parseKrakenElement (dataElem: string) =
+        try
+            let parsedData = KrakenElem.Parse(dataElem)
+            Ok parsedData
+        with
+        | ex -> Error (ParseError $"Error parsing Kraken data element: {ex.Message}")
     let response =
         try
-            Http.RequestString("https://api.kraken.com/0/public/AssetPairs")
+            Ok (Http.RequestString("https://api.kraken.com/0/public/AssetPairs"))
         with
         | ex -> 
-            printfn "Error requesting data: %s" ex.Message
-            ""
-    let parsed = KrakenPairs.Parse(response).JsonValue
-    match parsed.TryGetProperty("result") with
-        | Some result -> 
-            result.Properties() 
-            |> Array.map snd
-            |> Array.toSeq
-            |> Seq.map (fun data ->
-                            // printfn "Raw asset pair data: %A" data
-                            let parsed = KrakenElem.Parse(data.ToString())
-                            parsed
-                            )
-        | None -> Seq.empty
+            Error (SubscriptionError $"Error requesting data: {ex.Message}")
+    match response with
+    | Ok responseBody ->
+        // Parse the JSON response
+        match parseKrakenResponse responseBody with
+        | Ok parsed ->
+            match parsed.TryGetProperty("result") with
+            | Some result -> 
+                result.Properties() 
+                |> Array.map snd
+                |> Array.toSeq
+                |> Seq.map (fun data ->
+                    match parseKrakenElement (data.ToString()) with
+                    | Ok resultData -> Some resultData
+                    | Error _ -> None
+                )
+            | None -> 
+                printfn "No 'result' property found in parsed response."
+                Seq.empty
+        | Error _ ->
+            printfn "Kraken http response body parse error"
+            Seq.empty
+    | Error _ ->
+        printfn "Kraken url load error"
+        Seq.empty
          
     
-let processKrakenPairs (krakenData: seq<KrakenElem.Root>) =
+let processKrakenPairs (krakenData: seq<KrakenElem.Root option>) =
     krakenData
+    |> Seq.choose id
     |> Seq.map (fun data -> data.Wsname)
     |> Seq.filter (isValidPair "/")
     |> Seq.map (convertPair "/")
@@ -116,16 +133,32 @@ let findCrossTradedPairs (bitfinexPairs: seq<string>) (bitstampPairs: seq<string
     |> Seq.filter (fun (_, count) -> count >= 2)
     |> Seq.map fst
 
-let findPairs = 
-    let processedBitfinexPairs = processBitfinexPairs getBitfinexPairs
-    // printfn "processedBitfinexPairs %A" processedBitfinexPairs
-    let processedBitstampPairs = processBitstampPairs getBitstampPairs
-    // printfn "processedBitstampPairs %A" processedBitstampPairs
-    let processedKrakenPairs = processKrakenPairs getKrakenPairs
-    // printfn "processedKrakenPairs %A" processedKrakenPairs
-    let res = findCrossTradedPairs processedBitfinexPairs processedBitstampPairs processedKrakenPairs
-    printfn "currency pairs: %A" res
-    res
+let findCurrencyPairs =
+    // Chain the calls in a railway-oriented style
+    match getBitfinexPairs with
+    | Ok bitfinexParseResult ->
+        let processedBitfinexPairs = processBitfinexPairs bitfinexParseResult
+        match getBitstampPairs with
+        | Ok bitstampParseResult ->
+            let processedBitstampPairs = processBitstampPairs bitstampParseResult
+            match getKrakenPairs with
+            | krakenParseResult ->
+                let processedKrakenPairs = processKrakenPairs krakenParseResult
+                let res = findCrossTradedPairs processedBitfinexPairs processedBitstampPairs processedKrakenPairs
+                res |> Seq.iter (fun pairName ->
+                        match createCurrencyPair pairName with
+                            | Ok _ -> ()
+                            | Error err -> printfn "Failed to save currency pair: %s. Error: %A" pairName err
+                        )
+                printfn "currency pairs: %A" res
+                res
+        | Error _ ->
+            printfn "Cross-currency pair processing error"
+            Seq.empty
+    | Error _ ->
+        printfn "Cross-currency pair processing error"
+        Seq.empty
+
 
 
 

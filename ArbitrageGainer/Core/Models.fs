@@ -30,6 +30,8 @@ type DomainError =
     | AuthenticationError of string
     | SubscriptionError of string
     | DataError of string
+    | DatabaseError of string
+
 
 type DomainResult<'Success> = 
     | Ok of 'Success
