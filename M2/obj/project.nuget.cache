@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "4P6ykbAA/DY=",
+  "success": true,
+  "projectFilePath": "/Users/roxy/Desktop/Functional Programming/M2/M2.fsproj",
+  "expectedPackageFiles": [
+    "/Users/roxy/.nuget/packages/fsharp.core/6.0.7/fsharp.core.6.0.7.nupkg.sha512"
+  ],
+  "logs": []
+}

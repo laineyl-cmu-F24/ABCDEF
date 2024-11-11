@@ -1,16 +1,16 @@
-module Service.Cache
+module M2.Service.Cache
 
-open Core.Models
+open M2.Core.Models
 open Microsoft.FSharp.Collections
 
 // Messages that the Cache Agent can process
 type CacheMessage =
     | UpdateCache of Quote
-    | GetQuote of string * AsyncReplyChannel<Option<Quote>>
+    | GetQuote of CryptoSymbol * AsyncReplyChannel<Option<Quote>>
     | PrintCache //remove later
 
 let createCacheAgent () =
-    let rec agentLoop (cache: Map<(string * string), Quote>) (inbox: MailboxProcessor<CacheMessage>) =
+    let rec agentLoop (cache: Map<(CryptoSymbol * string), Quote>) (inbox: MailboxProcessor<CacheMessage>) =
         async {
             let! msg = inbox.Receive()
             match msg with
@@ -37,11 +37,14 @@ let createCacheAgent () =
                     return! agentLoop cache inbox
             //remove later
             | PrintCache ->
-                printfn "Cache size: %d" (Map.count cache)
-                cache
-                |> Map.iter(fun (symbol, exchange) quote ->
-                    printfn "Symbol: %A, Exchange: %s, Bid: %f, Ask: %f, Timestamp: %O"
-                        symbol exchange quote.BidPrice quote.AskPrice quote.Timestamp)
-            return! agentLoop cache inbox
+                match cache.IsEmpty with
+                |true ->
+                    printfn "Cache is empty."
+                |false ->
+                    cache
+                    |> Map.iter(fun (symbol, exchange) quote ->
+                        printfn "Symbol: %A, Exchange: %s, Bid: %f, Ask: %f, Timestamp: %O"
+                            symbol exchange quote.BidPrice quote.AskPrice quote.Timestamp)
+                return! agentLoop cache inbox
         }
     MailboxProcessor.Start(fun inbox -> agentLoop Map.empty inbox)

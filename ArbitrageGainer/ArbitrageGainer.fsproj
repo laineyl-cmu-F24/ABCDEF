@@ -7,7 +7,6 @@
 
   <ItemGroup>
       <Compile Include="Core\Models.fs" />
-      <Compile Include="Core\ArbitrageAnalysis.fs" />
       <Compile Include="Core\Interfaces.fs" />
       <Compile Include="Core\Helper.fs" />
       <Compile Include="Core\ParsingMessage.fs" />

@@ -1,4 +1,4 @@
-module Infrastructure.WebSocketClient
+module M2.Infrastructure.WebSocketClient
 
 open System
 
@@ -6,14 +6,14 @@ open System.Net.WebSockets
 open System.Text.Json
 open System.Threading
 open System.Text
-open Core.Models
-open Core.Interfaces
+open M2.Core.Models
+open M2.Core.Interfaces
 
 type WebSocketClient(uri, apiKey) =
     let wsClient = new ClientWebSocket()
     
     // Define a function to send a message to the WebSocket
-    let sendJsonMessage message =
+    let sendJsonMessage message : Async<Result<unit, DomainError>> =
             async {
                 try
                     let messageJson = JsonSerializer.Serialize(message)
@@ -34,7 +34,7 @@ type WebSocketClient(uri, apiKey) =
         with ex -> return Error (ConnectionError ex.Message)
     }
             
-    let receiveMessage () =
+    let receiveMessage () : Async<Result<string, DomainError>> =
         async {
             let buffer = Array.zeroCreate 10024
             let segment = new ArraySegment<byte>(buffer)
@@ -57,7 +57,7 @@ type WebSocketClient(uri, apiKey) =
                 return Error (DataError ex.Message)
         }
      
-    let close ()=
+    let close () : Async<Result<unit, DomainError>> =
         async {
             try
                 do! wsClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None) |> Async.AwaitTask
@@ -71,7 +71,5 @@ type WebSocketClient(uri, apiKey) =
         member _.SendMessage (message: 'T) = sendJsonMessage message
         member _.ReceiveMessage () = receiveMessage ()
         member _.Close () = close ()
-        member _.IsOpen =
-            wsClient.State = WebSocketState.Open
 
            
