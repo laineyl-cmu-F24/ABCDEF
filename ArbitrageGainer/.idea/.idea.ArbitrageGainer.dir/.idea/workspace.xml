@@ -7,26 +7,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="54dff43b-de59-4e5d-8dc5-b754aced3c6c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.ArbitrageGainer.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ArbitrageGainer.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ArbitrageGainer.fsproj" beforeDir="false" afterPath="$PROJECT_DIR$/ArbitrageGainer.fsproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/DatabaseInterface.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/Repository/DatabaseInterface.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Helper.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Core/CoreService/Helper.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Interfaces.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Model/Interfaces.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/Models.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Core/Model/Models.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Core/ParsingMessage.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Core/CoreService/ParsingMessage.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CurrencyPairRetrieval.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Service/ApplicationService/CurrencyPairRetrieval.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Historical_Calculation.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Service/ApplicationService/Historical_Calculation.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Infrastructure/WebSocketClient.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Infrastructure/Client/WebSocketClient.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MarketData.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Service/ApplicationService/MarketData.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Service/Cache.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Service/ApplicationService/Cache.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Service/Workflow.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Service/ApplicationService/Workflow.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api.fs" beforeDir="false" afterPath="$PROJECT_DIR$/app.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/metric.fs" beforeDir="false" afterPath="$PROJECT_DIR$/Service/ApplicationService/metric.fs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/obj/project.packagespec.json" beforeDir="false" afterPath="$PROJECT_DIR$/obj/project.packagespec.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/obj/rider.project.restore.info" afterDir="false" />
-    </list>
+    <list default="true" id="54dff43b-de59-4e5d-8dc5-b754aced3c6c" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -41,8 +22,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Core/CoreService/Helper.fs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Core/Model/Models.fs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Infrastructure/repository/DatabaseInterface.fs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/src/UserRepository.fs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Infrastructure/Repository/DatabaseInterface.fs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
