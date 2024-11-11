@@ -1,8 +1,8 @@
-module Core.ParsingMessage
+module Core.CoreService.ParsingMessage
 
 open System
 open System.Text.Json
-open Core.Models
+open Core.Model.Models
 
 let parseMessage(json: string) : ParseResult =
     try

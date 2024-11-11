@@ -1,10 +1,10 @@
-module Service.Workflow
+module Service.ApplicationService.Workflow
 
-open Service.Cache
-open Core.Models
-open Core.Interfaces
-open Core.Helper
-open Core.ParsingMessage
+open Service.ApplicationService.Cache
+open Core.Model.Models
+open Core.Model.Interfaces
+open Core.CoreService.Helper
+open Core.CoreService.ParsingMessage
 
 let runTradingWorkflow numOfCrypto (crossTradedCryptos: Set<string>) (webSocketClient: IWebSocketClient) (tradeHistory: TradeRecord list)=
     let cacheAgent = createCacheAgent ()

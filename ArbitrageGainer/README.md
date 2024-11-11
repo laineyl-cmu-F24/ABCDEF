@@ -1,19 +1,6 @@
-# APIs
-1. ``` POST /api/strategy ```
-```
-curl -X POST http://localhost:8080/api/strategy \
-     -d "NumOfCrypto=5" \
-     -d "MinSpreadPrice=10.5" \
-     -d "MinTransactionProfit=15.0" \
-     -d "MaxTransactionValue=1000.0" \
-     -d "MaxTradeValue=500.0" \
-     -d "InitialInvestmentAmount=10000.0" \
-     -d "Email=test@example.com" \
-     -d "PnLThreshold=5.0"
+# Milestone II Doc
 
-```
-
-2. ``` GET /api/strategy ```
-```
-curl -X GET http://localhost:8080/api/strategy
-```
+1. **Trading Strategy Management**:```ArbitrageGainer/app.fs```
+2. **Retrieval of Cross-Traded Currency Pairs**:```ArbitrageGainer/Service/ApplicationService/CurrencyPairRetrieval.fs```
+3. **Real-Time Market Data Management**: ```ArbitrageGainer/Service/ApplicationService/MarketData.fs```
+4. **Annualized Return Metric Calculation**: ```ArbitrageGainer/Service/ApplicationService/metric.fs```

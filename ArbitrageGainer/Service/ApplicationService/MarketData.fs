@@ -1,10 +1,10 @@
-module MarketData
+module Service.ApplicationService.MarketData
 
 open System
-open Core.Models
-open Service.Workflow
-open Core.Interfaces
-open Infrastructure.WebSocketClient
+open Core.Model.Models
+open Service.ApplicationService.Workflow
+open Core.Model.Interfaces
+open Infrastructure.Client.WebSocketClient
     
 let toggleRealTimeData flag numOfCrypto (crossTradedCryptos: Set<string>) tradeHistory (webSocketClient:IWebSocketClient)=
     async {

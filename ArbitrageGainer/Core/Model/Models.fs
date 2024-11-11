@@ -1,4 +1,4 @@
-module Core.Models
+module Core.Model.Models
 open System
 
 type TradeRecord = {
@@ -31,6 +31,7 @@ type DomainError =
     | SubscriptionError of string
     | DataError of string
     | DatabaseError of string
+    | PairParseError of string
 
 
 type DomainResult<'Success> = 

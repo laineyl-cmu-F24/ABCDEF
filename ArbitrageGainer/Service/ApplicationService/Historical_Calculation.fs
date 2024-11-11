@@ -1,4 +1,4 @@
-﻿module Historical
+﻿module Service.ApplicationService.Historical
 open FSharp.Data
 open System.IO
 

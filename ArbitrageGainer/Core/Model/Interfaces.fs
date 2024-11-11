@@ -1,6 +1,6 @@
-module Core.Interfaces
+module Core.Model.Interfaces
 
-open Core.Models
+open Core.Model.Models
 
 type IWebSocketClient =
     abstract member Connect : unit -> Async<DomainResult<unit>>

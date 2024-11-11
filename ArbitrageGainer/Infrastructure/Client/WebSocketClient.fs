@@ -1,4 +1,4 @@
-module Infrastructure.WebSocketClient
+module Infrastructure.Client.WebSocketClient
 
 open System
 
@@ -6,8 +6,8 @@ open System.Net.WebSockets
 open System.Text.Json
 open System.Threading
 open System.Text
-open Core.Models
-open Core.Interfaces
+open Core.Model.Models
+open Core.Model.Interfaces
 
 type WebSocketClient(uri, apiKey) =
     let wsClient = new ClientWebSocket()

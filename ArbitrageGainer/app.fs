@@ -1,17 +1,17 @@
-module api
+module app
 open System
 open System.IO
 open Suave
 open Suave.Operators
 open Suave.Filters
 
-open Historical
-open Metric
-open CrossTradedCurrencyPair
-open MarketData
-open Core.Models
-open Core.Interfaces
-open Infrastructure.WebSocketClient
+open Service.ApplicationService.Historical
+open Service.ApplicationService.Metric
+open Service.ApplicationService.CrossTradedCurrencyPair
+open Service.ApplicationService.MarketData
+open Core.Model.Models
+open Core.Model.Interfaces
+open Infrastructure.Client.WebSocketClient
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -123,7 +123,7 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
                 let numOfCrypto = tradingParams.NumOfCrypto
                 let tradeHistory = currTradingState.TradeHistory
                 //need to be change with actual
-                let crossTradedCryptos = Set.ofSeq findPairs
+                let crossTradedCryptos = Set.ofSeq findCurrencyPairs
                 let uri = Uri("wss://socket.polygon.io/crypto")
                 let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
                 let webSocketClient = WebSocketClient(uri, apiKey) :> IWebSocketClient

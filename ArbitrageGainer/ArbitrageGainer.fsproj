@@ -4,21 +4,23 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="Core\Model\Models.fs" />
+        <Compile Include="Core\Model\Interfaces.fs" />
+        <Compile Include="Core\CoreService\Helper.fs" />
+        <Compile Include="Core\CoreService\ParsingMessage.fs" />
+    </ItemGroup>
 
   <ItemGroup>
-      <Compile Include="Core\Models.fs" />
-      <Compile Include="Core\Interfaces.fs" />
-      <Compile Include="Core\Helper.fs" />
-      <Compile Include="Core\ParsingMessage.fs" />
-      <Compile Include="Core\DatabaseInterface.fs" />
-      <Compile Include="Infrastructure\WebSocketClient.fs" />
-      <Compile Include="Service\Cache.fs" />
-      <Compile Include="Service\Workflow.fs" />
-      <Compile Include="Historical_Calculation.fs" />
-      <Compile Include="MarketData.fs" />
-      <Compile Include="metric.fs" />
-      <Compile Include="CurrencyPairRetrieval.fs" />
-      <Compile Include="api.fs" />
+      <Compile Include="Service\ApplicationService\Cache.fs" />
+      <Compile Include="Service\ApplicationService\Workflow.fs" />
+      <Compile Include="Infrastructure\Client\WebSocketClient.fs" />
+      <Compile Include="Service\ApplicationService\Historical_Calculation.fs" />
+      <Compile Include="Service\ApplicationService\MarketData.fs" />
+      <Compile Include="Service\ApplicationService\metric.fs" />
+      <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
+      <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
+      <Compile Include="app.fs" />
       <Content Include="README.md" />
 
   </ItemGroup>

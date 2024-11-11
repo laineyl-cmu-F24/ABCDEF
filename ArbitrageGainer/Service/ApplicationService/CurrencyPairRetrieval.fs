@@ -1,8 +1,8 @@
-module CrossTradedCurrencyPair
+module Service.ApplicationService.CrossTradedCurrencyPair
 open FSharp.Data
 open System
-open Core.Models
-open Core.DatabaseInterface
+open Core.Model.Models
+open Infrastructure.Repository.DatabaseInterface
 
 // Filter unction to select valid pairs
 let isValidPair (separator: string) (pair: string) =
@@ -25,7 +25,7 @@ let getBitfinexPairs =
         let samples = BitfinexPairs.GetSamples()
         Ok (Seq.concat samples)
     with
-    | ex -> Error (ParseError $"Error parsing Bitfinex pairs: {ex.Message}")
+    | ex -> Error (PairParseError $"Error parsing Bitfinex pairs: {ex.Message}")
 
 
 let processBitfinexPairs (bitfinexData: seq<string>) =
@@ -49,7 +49,7 @@ let getBitstampPairs =
         let samples = BitstampPairs.GetSamples()
         Ok (Array.toSeq samples)
     with
-    | ex -> Error (ParseError $"Error parsing Bitstamp pairs: {ex.Message}")
+    | ex -> Error (PairParseError $"Error parsing Bitstamp pairs: {ex.Message}")
     
 // Function to process Bitstamp pairs
 let processBitstampPairs (bitstampData: seq<BitstampPairs.Root>) =
@@ -77,13 +77,13 @@ let getKrakenPairs =
             let parsed = KrakenPairs.Parse(responseBody).JsonValue
             Ok parsed
         with
-        | ex -> Error (ParseError $"Error parsing Kraken response: {ex.Message}")
+        | ex -> Error (PairParseError $"Error parsing Kraken response: {ex.Message}")
     let parseKrakenElement (dataElem: string) =
         try
             let parsedData = KrakenElem.Parse(dataElem)
             Ok parsedData
         with
-        | ex -> Error (ParseError $"Error parsing Kraken data element: {ex.Message}")
+        | ex -> Error (PairParseError $"Error parsing Kraken data element: {ex.Message}")
     let response =
         try
             Ok (Http.RequestString("https://api.kraken.com/0/public/AssetPairs"))

@@ -1,7 +1,7 @@
-module Core.DatabaseInterface
+module Infrastructure.Repository.DatabaseInterface
 open MongoDB.Driver
 open MongoDB.Bson
-open Core.Models
+open Core.Model.Models
 
 
 // DB item definition

@@ -1,4 +1,4 @@
-module Metric
+module Service.ApplicationService.Metric
 
 open System
 
