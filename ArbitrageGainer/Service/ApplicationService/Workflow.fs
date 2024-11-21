@@ -1,5 +1,6 @@
 module Service.ApplicationService.Workflow
 
+open System.IO
 open Service.ApplicationService.Cache
 open Core.Model.Models
 open Core.Model.Interfaces
@@ -16,13 +17,15 @@ let runTradingWorkflow numOfCrypto (crossTradedCryptos: Set<string>) (webSocketC
         |> List.truncate numOfCrypto
         |> List.map (fun record -> record.Pair)
     
-    if List.length tradeHistory < numOfCrypto then
-        printfn "Warning: Requested top %d cryptos, but only %d available in trade history." numOfCrypto (List.length tradeHistory)
+    match List.length tradeHistory with
+        | count when count < numOfCrypto ->
+            printfn "Warning: Requested top %d cryptos, but only %d available in trade history." numOfCrypto count
+        | _ -> ()
     
     // Step 2: Check with cross-traded cryptocurrencies
     let filteredCryptos =
         topNCryptosResult
-        |> List.filter (fun pair -> crossTradedCryptos.Contains pair)
+        |> List.filter crossTradedCryptos.Contains
     
     // Step 3: Use the webSocketClient to send messages and receive data
     let connectAndReceive symbols =
