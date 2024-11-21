@@ -7,10 +7,12 @@ open System.Text.Json
 open System.Threading
 open System.Text
 open Core.Model.Models
-open Core.Model.Interfaces
+open Core.CoreService.ParsingMessage
+open Service.ApplicationService.Cache
 
-type WebSocketClient(uri, apiKey) =
+let WebSocketClient uri apiKey symbols =
     let wsClient = new ClientWebSocket()
+    let cacheAgent = createCacheAgent()
     
     // Define a function to send a message to the WebSocket
     let sendJsonMessage message =
@@ -59,19 +61,76 @@ type WebSocketClient(uri, apiKey) =
      
     let close ()=
         async {
-            try
+        try
+            match wsClient.State with
+            | WebSocketState.Open
+            | WebSocketState.CloseReceived
+            | WebSocketState.CloseSent ->
                 do! wsClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None) |> Async.AwaitTask
+                printfn "WebSocket client closed."
                 return Ok ()
-            with ex ->
-                return Error (ConnectionError ex.Message)
+            | _ ->
+                printfn "WebSocket is not connected. No need to close."
+                return Ok ()
+        with ex ->
+            printfn "Exception during WebSocket close: %A" ex
+            return Error (ConnectionError ex.Message)
+    }
+    
+    let IsOpen() = wsClient.State = WebSocketState.Open
+    
+    let connectAndReceive() =
+        async{
+            let! connectResult = connect()
+            match connectResult with
+                | Error e -> return Error e
+                | Ok () ->
+                    printfn "Connected and authenticated."
+                    
+                    let subscriptionParameters = 
+                        symbols 
+                        |> List.map (fun s -> $"XQ.{s}") 
+                        |> String.concat ","
+                    
+                    let subscriptionMessage = { action = "subscribe"; params = subscriptionParameters }
+                    let! subResult = sendJsonMessage subscriptionMessage
+                    match subResult with
+                        | Error errMsg -> return Error errMsg
+                        | Ok () ->
+                            printfn "Subscription successful."
+                            
+                            let rec receiveLoop() = async {
+                                match IsOpen() with
+                                | false ->
+                                    printfn "WebSocket is closed, stopping receive loop."
+                                    return Ok ()
+                                | true ->
+                                    let! receiveResult = receiveMessage()
+                                    match receiveResult with
+                                    |Error e -> return Error e
+                                    |Ok message ->
+                                        match parseMessage message with
+                                        | QuoteReceived quote ->
+                                            cacheAgent.Post(UpdateCache quote)
+                                            printfn "Printing cache after update:"
+                                            cacheAgent.Post(PrintCache)
+                                            return! receiveLoop()
+                                        | StatusReceived statusMsg ->
+                                            return! receiveLoop()
+                                        |ParseError err -> return! receiveLoop()
+                                }
+                            let! receiveResult = receiveLoop()
+                            return receiveResult        
         }
+        
+    let clientAsync = async {
+        let! result = connectAndReceive()
+        match result with
+        | Ok () -> ()
+        | Error e -> printfn "WebSocket client error: %A" e
+    }
+    
+    (close, clientAsync)
 
-    interface IWebSocketClient with
-        member _.Connect () = connect ()
-        member _.SendMessage (message: 'T) = sendJsonMessage message
-        member _.ReceiveMessage () = receiveMessage ()
-        member _.Close () = close ()
-        member _.IsOpen =
-            wsClient.State = WebSocketState.Open
 
            
