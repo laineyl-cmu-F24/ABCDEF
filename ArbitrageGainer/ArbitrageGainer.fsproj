@@ -6,7 +6,6 @@
   </PropertyGroup>
     <ItemGroup>
         <Compile Include="Core\Model\Models.fs" />
-        <Compile Include="Core\Model\Interfaces.fs" />
         <Compile Include="Core\CoreService\Helper.fs" />
         <Compile Include="Core\CoreService\ParsingMessage.fs" />
     </ItemGroup>

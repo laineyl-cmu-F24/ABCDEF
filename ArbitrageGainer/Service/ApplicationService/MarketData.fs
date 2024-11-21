@@ -3,28 +3,17 @@ module Service.ApplicationService.MarketData
 open System
 open Core.Model.Models
 open Service.ApplicationService.Workflow
-open Core.Model.Interfaces
 open Infrastructure.Client.WebSocketClient
     
-let toggleRealTimeData flag numOfCrypto (crossTradedCryptos: Set<string>) tradeHistory (webSocketClient:IWebSocketClient)=
+let toggleRealTimeData flag numOfCrypto (crossTradedCryptos: Set<string>) tradeHistory uri apiKey : Async<DomainResult<unit -> Async<DomainResult<unit>>>> =
     async {
+        let filteredCryptos = runTradingWorkflow numOfCrypto crossTradedCryptos tradeHistory
+        let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCryptos
         match flag with
         | false ->
-            let! closeResult = webSocketClient.Close()
-            match closeResult with
-            | Ok () ->
-                printfn "WebSocket client closed successfully."
-                return Ok ()
-            | Error e ->
-                printfn "Error during close"
-                return Error e
+            return Error (ConnectionError "toggleRealTimeData called with flag false without closeFunc")
         | true ->
-            let! result =
-                runTradingWorkflow numOfCrypto crossTradedCryptos webSocketClient tradeHistory
-            match result with
-            | Ok () ->
-                printfn "WebSocket client started successfully."
-                return Ok()
-            | Error errMsg ->
-                return Error errMsg
+            let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCryptos
+            Async.Start(clientAsync)
+            return Ok closeFunc
     }
