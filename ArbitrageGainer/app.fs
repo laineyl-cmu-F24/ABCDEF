@@ -8,9 +8,9 @@ open Suave.Filters
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
 open Service.ApplicationService.CrossTradedCurrencyPair
+open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
 open Core.Model.Models
-open Core.Model.Interfaces
 open Infrastructure.Client.WebSocketClient
 
 type TradingParameters = {
@@ -28,21 +28,21 @@ type SystemState = {
     TradingParams: TradingParameters option
     IsTradingActive: bool
     TradeHistory: TradeRecord list
-    WebSocketClient: IWebSocketClient option
+    WebSocketClientCloseFunc: Option<unit -> Async<DomainResult<unit>>>
 }
 
 type AgentMessage =
     | SetTradingParameters of TradingParameters * AsyncReplyChannel<SystemState>
     | GetCurrentState of AsyncReplyChannel<SystemState>
     | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
-    | ToggleTrading of bool * IWebSocketClient option * AsyncReplyChannel<SystemState>
+    | ToggleTrading of bool * Option<unit -> Async<DomainResult<unit>>> * AsyncReplyChannel<SystemState>
     
     
 let initialState = {
     TradingParams = None
     IsTradingActive = false
     TradeHistory = []
-    WebSocketClient = None
+    WebSocketClientCloseFunc =  None
 }
 
 let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
@@ -62,8 +62,8 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
                 let updatedState = { state with TradeHistory = newTrades }
                 reply.Reply(updatedState)
                 return! loop updatedState
-            | ToggleTrading (isActive, wsClientOpt, reply) ->
-                let updatedState = { state with IsTradingActive = isActive; WebSocketClient = wsClientOpt; }
+            | ToggleTrading (isActive, closeFuncOpt, reply) ->
+                let updatedState = { state with IsTradingActive = isActive; WebSocketClientCloseFunc =  closeFuncOpt; }
                 reply.Reply(updatedState)
                 return! loop updatedState
         }
@@ -128,33 +128,36 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
                 let tradeHistory = currTradingState.TradeHistory
                 //need to be change with actual
                 let crossTradedCryptos = Set.ofSeq findCurrencyPairs
+                //let crossTradedCryptos = Set.ofSeq ["MKR-USD"; "USD-BIT"]
                 let uri = Uri("wss://socket.polygon.io/crypto")
                 let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
-                let webSocketClient = WebSocketClient(uri, apiKey) :> IWebSocketClient
-                Async.Start(async {
-                    let! result = toggleRealTimeData true numOfCrypto crossTradedCryptos tradeHistory webSocketClient
-                    match result with
-                    | Ok () ->
-                        printfn "Trading workflow completed successfully."
-                    | Error e ->
-                        printfn "Trading workflow failed with error: %A" e
-                })
-                let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some webSocketClient, reply))
-                return (Successful.OK "Trading started\n", ())
+                let filteredCrypto = runTradingWorkflow numOfCrypto crossTradedCryptos tradeHistory
+                let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCrypto
+                let! result = toggleRealTimeData true numOfCrypto crossTradedCryptos tradeHistory uri apiKey
+                match result with
+                | Ok closeFunc ->
+                    let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some closeFunc, reply))
+                    printfn "Trading started."
+                    return (Successful.OK "Trading started\n", ())
+                | Error e ->
+                    printfn "Failed to start trading: %A" e
+                    return (RequestErrors.BAD_REQUEST (sprintf "Failed to start trading: %A" e), ())
             | None ->
                 return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
         | true ->
-            match currTradingState.WebSocketClient with
-            | Some webSocketClient ->
-                let! closeResult = webSocketClient.Close()
+            match currTradingState.WebSocketClientCloseFunc with
+            | Some closeFunc ->
+                let! closeResult = closeFunc()
                 match closeResult with
                 | Ok () ->
                     let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(false, None, reply))
+                    printfn "Trading stopped."
                     return (Successful.OK "Trading stopped\n", ())
                 | Error e ->
-                    let! _ = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some webSocketClient, reply))
+                    printfn "Error during close: %A" e
                     return (RequestErrors.BAD_REQUEST "Failed to stop trading", ())
-            |None -> return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
+            | None ->
+                return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
     }
     
 let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
