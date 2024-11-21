@@ -92,9 +92,13 @@ let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
                 MaxTransactionValue = decimal maxTransactVal
                 MaxTradeValue = decimal maxTradeVal 
                 InitialInvestmentAmount = decimal initialInvestment
-                Email = if String.IsNullOrWhiteSpace email then None else Some email
-                PnLThreshold = if String.IsNullOrWhiteSpace pnlThreshold then None else Some (decimal pnlThreshold)
-            }
+                Email = match email with
+                            | null | "" -> None
+                            | _ -> Some email
+                PnLThreshold = match pnlThreshold with
+                                   | null | "" -> None
+                                   | _ -> Some (decimal pnlThreshold)
+                }
             let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(parameters, reply))
             // printfn $"Updated State: %A{updatedState}"
             return (Successful.OK "Trading parameters updated successfully\n", updatedState)
