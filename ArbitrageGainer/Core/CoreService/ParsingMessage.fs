@@ -19,12 +19,16 @@ let parseMessage(json: string) : ParseResult =
                     let pair = message.GetProperty("pair").GetString()
                     let bidPrice = message.GetProperty("bp").GetDecimal()
                     let askPrice = message.GetProperty("ap").GetDecimal()
+                    let askSize = message.GetProperty("as").GetDecimal()
+                    let bidSize = message.GetProperty("bs").GetDecimal()
                     let timestamp = message.GetProperty("t").GetInt64()
                     let quote = {
-                        Symbol =  pair
+                        Pair =  pair
                         Exchange = exchangeId.ToString()
                         BidPrice = bidPrice
+                        BidSize = bidSize 
                         AskPrice = askPrice
+                        AskSize = askSize 
                         Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).UtcDateTime
                     }
                     QuoteReceived quote

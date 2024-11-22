@@ -13,17 +13,6 @@ open Service.ApplicationService.MarketData
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
 
-type TradingParameters = {
-    NumOfCrypto: int
-    MinSpreadPrice: decimal
-    MinTransactionProfit: decimal
-    MaxTransactionValue: decimal
-    MaxTradeValue: decimal
-    InitialInvestmentAmount: decimal
-    Email: string option
-    PnLThreshold: decimal option
-}
-
 type SystemState = {
     TradingParams: TradingParameters option
     IsTradingActive: bool
@@ -120,16 +109,18 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
         | false ->
             match currTradingState.TradingParams with
             |Some tradingParams ->
-                let numOfCrypto = tradingParams.NumOfCrypto
+                let tradingParams = tradingParams
                 let tradeHistory = currTradingState.TradeHistory
                 //need to be change with actual
-                let crossTradedCryptos = Set.ofSeq findCurrencyPairs
-                //let crossTradedCryptos = Set.ofSeq ["MKR-USD"; "USD-BIT"]
-                let uri = Uri("wss://socket.polygon.io/crypto")
-                let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
-                let filteredCrypto = runTradingWorkflow numOfCrypto crossTradedCryptos tradeHistory
-                let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCrypto
-                let! result = toggleRealTimeData true numOfCrypto crossTradedCryptos tradeHistory uri apiKey
+                //let crossTradedCryptos = Set.ofSeq findCurrencyPairs
+                let crossTradedCryptos = Set.ofSeq ["MKR-USD"; "USD-BTC"; "SOL-USD"; "DOT-USD"]
+                //let uri = Uri("wss://socket.polygon.io/crypto")
+                //let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
+                let uri = Uri("wss://one8656-live-data.onrender.com/")
+                let apiKey = ""
+                let filteredCrypto = runTradingWorkflow tradingParams crossTradedCryptos tradeHistory
+                let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCrypto tradingParams
+                let! result = toggleRealTimeData true tradingParams crossTradedCryptos tradeHistory uri apiKey
                 match result with
                 | Ok closeFunc ->
                     let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some closeFunc, reply))
