@@ -114,7 +114,6 @@ let WebSocketClient uri apiKey symbols tradingParams =
                                         | QuoteReceived quote ->
                                             do! processArbitrageOpportunities cacheAgent tradingParams
                                             cacheAgent.Post(UpdateCache quote)
-                                            cacheAgent.Post(PrintCache)
                                             return! receiveLoop()
                                         | StatusReceived statusMsg ->
                                             return! receiveLoop()

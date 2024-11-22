@@ -1,10 +1,9 @@
 module Service.ApplicationService.TradingAgent
 
 open Core.Model.Models
-open System
 open Service.ApplicationService.Cache
 
-
+//check if a spread exists
 let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: TradingParameters) =
     let groupedQuote =
         cachedQuotes
@@ -13,6 +12,7 @@ let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: T
         
     groupedQuote
     |> Seq.choose(fun(pair, quotes) ->
+        // Filter quotes with remaining sizes > 0
         let potentialBuys = quotes |> List.filter(fun q -> q.RemainingAskSize > 0M)
         let potentialSells = quotes |> List.filter(fun q -> q.RemainingBidSize > 0M)
         
@@ -35,33 +35,37 @@ let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: T
             |false -> None
     )
     |> Seq.sortByDescending(fun opp -> opp.Spread)
-    |> Seq.tryHead
+    |> Seq.tryHead//take largest spread
 
 let placeOrder orderType exchange pair price quantity =
     async {
         printfn "%s, %s, %s %M %M" pair exchange orderType price quantity
     }
-let executeTrades (opportunity:ArbitrageOpportunity) (tradingParams:TradingParameters) =
+    
+//apply trading strategy
+let executeTrades (opportunity:ArbitrageOpportunity) (tradingParams:TradingParameters) (cacheAgent: MailboxProcessor<CacheMessage>)=
     async {
-        let tradeKey = sprintf "%s_%s_%s_%M" opportunity.Pair opportunity.BuyCachedQuote.Quote.Exchange opportunity.SellCachedQuote.Quote.Exchange opportunity.Spread
-        printfn "Attempting to execute trade with key: %s" tradeKey
+        //maximum possible quantity to trade
         let buyQty = opportunity.BuyCachedQuote.RemainingAskSize
         let sellQty = opportunity.SellCachedQuote.RemainingBidSize
         let maxPossibleQty = min buyQty sellQty
         
+        //maximum quantity allowed by tradingParams
         let maxQtyByTrx = tradingParams.MaxTransactionValue / opportunity.BuyCachedQuote.Quote.AskPrice
         let maxQtyByTrading = tradingParams.MaxTradeValue / opportunity.BuyCachedQuote.Quote.AskPrice
-        
         let maxQty = [maxPossibleQty; maxQtyByTrx; maxQtyByTrading] |> List.min
         
+        //calculate profit
         let potentialProfit = maxQty * opportunity.Spread
         match potentialProfit >= tradingParams.MinTransactionProfit with
         |true ->
             printfn "Executing arbitrage opportunity for %s" opportunity.Pair
-            //printfn "Buying %M units at %M from exchange %s" maxQty opportunity.BuyQuote.AskPrice opportunity.BuyQuote.Exchange
-            //printfn "Selling %M units at %M to exchange %s" maxQty opportunity.SellQuote.BidPrice opportunity.SellQuote.Exchange
+            //emit buy and sell
             do! placeOrder "Buy" opportunity.BuyCachedQuote.Quote.Exchange opportunity.Pair opportunity.BuyCachedQuote.Quote.AskPrice maxQty
             do! placeOrder "Sell" opportunity.SellCachedQuote.Quote.Exchange opportunity.Pair opportunity.SellCachedQuote.Quote.BidPrice maxQty
+            //update remaining quantities
+            cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.BuyCachedQuote.Quote.Exchange, 0M, -maxQty))
+            cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.SellCachedQuote.Quote.Exchange, -maxQty, 0M))
         |false -> () 
     }
    
@@ -72,7 +76,7 @@ let processArbitrageOpportunities (cacheAgent: MailboxProcessor<CacheMessage>) (
         
         match arbitrageOpportunities with
         |Some opportunity ->
-            do! executeTrades opportunity tradingParams
+            do! executeTrades opportunity tradingParams cacheAgent
         | None -> () 
     }
     

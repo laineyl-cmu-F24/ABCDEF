@@ -3,14 +3,12 @@ module Service.ApplicationService.Cache
 open Core.Model.Models
 open Microsoft.FSharp.Collections
 
-// Messages that the Cache Agent can process
 
 type CacheMessage =
     | UpdateCache of Quote
     | GetQuote of string * AsyncReplyChannel<Option<Quote>>
     | GetAllQuotes of AsyncReplyChannel<CachedQuote list>
     | UpdateQuantities of pair: string * exchangeId: string * deltaBidSize: decimal * deltaAskSize: decimal
-    | PrintCache //remove later
 
 let createCacheAgent () =
     MailboxProcessor<CacheMessage>.Start(fun inbox ->
@@ -32,19 +30,18 @@ let createCacheAgent () =
                     let updatedCache = cache.Add(quote.Pair, updatedExchangeQuotes)
                     return! loop updatedCache
                 | GetAllQuotes replyChannel ->
-                    // Flatten the cache to a list of CachedQuotes
                     let allCachedQuotes =
                         cache
                         |> Map.toList
                         |> List.collect (fun (_, exchangeQuotes) -> exchangeQuotes |> Map.toList |> List.map snd)
                     replyChannel.Reply(allCachedQuotes)
                     return! loop cache
-                | UpdateQuantities (pair, exchangeId, deltaBidSize, deltaAskSize) ->
+                | UpdateQuantities (pair, exchange, deltaBidSize, deltaAskSize) ->
                     // Update the remaining quantities after a trade
                     let updatedCache =
                         cache |> Map.change pair (fun exchangeQuotesOpt ->
                             exchangeQuotesOpt |> Option.map (fun exchangeQuotes ->
-                                exchangeQuotes |> Map.change exchangeId (fun cachedQuoteOpt ->
+                                exchangeQuotes |> Map.change exchange (fun cachedQuoteOpt ->
                                     cachedQuoteOpt |> Option.map (fun cachedQuote ->
                                         {
                                             cachedQuote with
@@ -52,18 +49,5 @@ let createCacheAgent () =
                                                 RemainingAskSize = cachedQuote.RemainingAskSize + deltaAskSize
                                         }))))
                     return! loop updatedCache
-                | PrintCache ->
-                    // For debugging purposes
-                    printfn "Current Cache:"
-                    cache |> Map.iter (fun key exchangeQuotes ->
-                        printfn "Pair: %s" key
-                        exchangeQuotes |> Map.iter (fun exchangeId cachedQuote ->
-                            printfn "  Exchange: %s, Bid: %M (%M left), Ask: %M (%M left)"
-                                exchangeId
-                                cachedQuote.Quote.BidPrice
-                                cachedQuote.RemainingBidSize
-                                cachedQuote.Quote.AskPrice
-                                cachedQuote.RemainingAskSize))
-                    return! loop cache
             }
         loop Map.empty)
