@@ -1,6 +1,13 @@
 module Service.ApplicationService.PnL
 open System
 
+type Side =
+    | Buy
+    | Sell
+
+type Exchange =
+    | Exchange of string
+
 type Transaction = {
     Id: string
     OrderId: string
@@ -11,3 +18,7 @@ type Transaction = {
     Amount: decimal
     decimalTimestamp: DateTime
 }
+
+// calculate the PL of an order
+let calculatePLofTransaction (order: Transaction) = None
+  
