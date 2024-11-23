@@ -37,9 +37,17 @@ let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: T
     |> Seq.sortByDescending(fun opp -> opp.Spread)
     |> Seq.tryHead//take largest spread
 
+let getExchangeName exchangeId =
+    match exchangeId with
+    | "2" -> "BitFinex"
+    | "6" -> "BitStamp"
+    | "23" -> "Kraken"
+    | _ -> "Unknown Exchange"
+    
 let placeOrder orderType exchange pair price quantity =
     async {
-        printfn "%s, %s, %s %M %M" pair exchange orderType price quantity
+        let exchangeName = getExchangeName exchange
+        printfn "%s, %s (%s), %s, %M, %M" pair exchange exchangeName orderType price quantity
     }
     
 //apply trading strategy
