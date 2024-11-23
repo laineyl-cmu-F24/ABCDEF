@@ -34,19 +34,20 @@ let validateTimeInterval (startTime:int64) (endTime:int64) : ValidationResult<in
 let calculateAnnualizedMetric (startTime: int64) (endTime: int64) (PL: decimal) (initialInvestment: decimal) =
     let durationInYear = float (endTime - startTime) / 3.154e+10
     let percentageGrowth = float (PL / initialInvestment)
-    let result = (decimal (System.Math.Pow(percentageGrowth, 1.0 / durationInYear))) - 1M
-    printfn $"Requested annual: %A{result}"
-    result
+    (decimal (System.Math.Pow(percentageGrowth, 1.0 / durationInYear))) - 1M
+    // printfn $"Requested annual: %A{result}"
+    // result
 
-let rec AnnualizedMetric (initialAmount) = 
-    // let initialAmount = tradingParameters.InitialInvestmentAmount
-    let startTime = 1729728000000L
-    let endTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() 
-    let pl = 100M 
-    match validateInitialAmount initialAmount with
-    | Error e -> Error e
-    | Ok validAmount -> 
-        match validateTimeInterval startTime endTime with
+let rec AnnualizedMetric initialAmount startTradingTime =
+    match startTradingTime with
+    | None -> Error InvalidTimeRange // Handle case where trading hasn't started
+    | Some startTime -> 
+        let endTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() 
+        let pl = 100M 
+        match validateInitialAmount initialAmount with
         | Error e -> Error e
-        | Ok (validStart, validEnd) ->
-            Ok (calculateAnnualizedMetric validStart validEnd pl validAmount)
+        | Ok validAmount -> 
+            match validateTimeInterval startTime endTime with
+            | Error e -> Error e
+            | Ok (validStart, validEnd) ->
+                Ok (calculateAnnualizedMetric validStart validEnd pl validAmount)

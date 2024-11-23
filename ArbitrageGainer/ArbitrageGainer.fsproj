@@ -16,7 +16,7 @@
       <Compile Include="Infrastructure\Client\WebSocketClient.fs" />
       <Compile Include="Service\ApplicationService\Historical_Calculation.fs" />
       <Compile Include="Service\ApplicationService\MarketData.fs" />
-      <Compile Include="Service\ApplicationService\metric.fs" />
+      <Compile Include="Service\ApplicationService\Metric.fs" />
       <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
       <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
       <Compile Include="app.fs" />
