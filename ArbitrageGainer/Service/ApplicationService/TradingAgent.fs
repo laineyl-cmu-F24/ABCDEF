@@ -43,39 +43,47 @@ let getExchangeName exchangeId =
     | "6" -> "BitStamp"
     | "23" -> "Kraken"
     | _ -> "Unknown Exchange"
-    
+
+let getExchangeString exchange = 
+    match exchange with
+    | Bitfinex -> "2"
+    | Bitstamp -> "6"
+    | Kraken -> "23"
+    | _ -> "Unknown Exchange"
+
 let placeOrder orderType exchange pair price quantity =
     async {
         let exchangeName = getExchangeName exchange
-        printfn "%s, %s (%s), %s, %M, %M" pair exchange exchangeName orderType price quantity
+        printfn "%s, %A (%s), %s, %M, %M" pair exchange exchangeName orderType price quantity
     }
-    
-//apply trading strategy
-let executeTrades (opportunity:ArbitrageOpportunity) (tradingParams:TradingParameters) (cacheAgent: MailboxProcessor<CacheMessage>)=
+
+// Apply trading strategy
+let executeTrades (opportunity: ArbitrageOpportunity) (tradingParams: TradingParameters) (cacheAgent: MailboxProcessor<CacheMessage>) =
     async {
-        //maximum possible quantity to trade
+        // Maximum possible quantity to trade
         let buyQty = opportunity.BuyCachedQuote.RemainingAskSize
         let sellQty = opportunity.SellCachedQuote.RemainingBidSize
         let maxPossibleQty = min buyQty sellQty
-        
-        //maximum quantity allowed by tradingParams
+
+        // Maximum quantity allowed by tradingParams
         let maxQtyByTrx = tradingParams.MaxTransactionValue / opportunity.BuyCachedQuote.Quote.AskPrice
         let maxQtyByTrading = tradingParams.MaxTradeValue / opportunity.BuyCachedQuote.Quote.AskPrice
         let maxQty = [maxPossibleQty; maxQtyByTrx; maxQtyByTrading] |> List.min
-        
-        //calculate profit
+
+        // Calculate profit
         let potentialProfit = maxQty * opportunity.Spread
         match potentialProfit >= tradingParams.MinTransactionProfit with
-        |true ->
+        | true ->
             printfn "Executing arbitrage opportunity for %s" opportunity.Pair
-            //emit buy and sell
-            do! placeOrder "Buy" opportunity.BuyCachedQuote.Quote.Exchange opportunity.Pair opportunity.BuyCachedQuote.Quote.AskPrice maxQty
-            do! placeOrder "Sell" opportunity.SellCachedQuote.Quote.Exchange opportunity.Pair opportunity.SellCachedQuote.Quote.BidPrice maxQty
-            //update remaining quantities
+            // Emit buy and sell
+            do! placeOrder "Buy" (getExchangeString opportunity.BuyCachedQuote.Quote.Exchange) opportunity.Pair opportunity.BuyCachedQuote.Quote.AskPrice maxQty
+            do! placeOrder "Sell" (getExchangeString opportunity.SellCachedQuote.Quote.Exchange) opportunity.Pair opportunity.SellCachedQuote.Quote.BidPrice maxQty
+            // Update remaining quantities
             cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.BuyCachedQuote.Quote.Exchange, 0M, -maxQty))
             cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.SellCachedQuote.Quote.Exchange, -maxQty, 0M))
-        |false -> () 
+        | false -> () 
     }
+
    
 let processArbitrageOpportunities (cacheAgent: MailboxProcessor<CacheMessage>) (tradingParams: TradingParameters) =
     async {

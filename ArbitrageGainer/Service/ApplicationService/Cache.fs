@@ -14,7 +14,7 @@ type CacheMessage =
     | UpdateCache of Quote
     | GetQuote of string * AsyncReplyChannel<Option<Quote>>
     | GetAllQuotes of AsyncReplyChannel<CachedQuote list>
-    | UpdateQuantities of pair: string * exchangeId: string * deltaBidSize: decimal * deltaAskSize: decimal
+    | UpdateQuantities of pair: string * exchangeId: Exchange * deltaBidSize: decimal * deltaAskSize: decimal
 
 let createCacheAgent () =
     MailboxProcessor<CacheMessage>.Start(fun inbox ->
