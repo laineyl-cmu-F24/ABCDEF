@@ -1,6 +1,6 @@
 module ArbitrageGainer.Tests.Metric
 open NUnit.Framework
-open Metric
+open Service.ApplicationService.Metric
 
 [<Test>]
 let ``validateInitialAmount should return Ok for positive amount`` () =
