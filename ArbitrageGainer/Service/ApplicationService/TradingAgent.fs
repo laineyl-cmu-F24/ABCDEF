@@ -2,6 +2,7 @@ module Service.ApplicationService.TradingAgent
 
 open Core.Model.Models
 open Service.ApplicationService.Cache
+open Service.ApplicationService.OrderManagement
 
 //check if a spread exists
 let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: TradingParameters) =
