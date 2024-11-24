@@ -1,8 +1,11 @@
 module Service.ApplicationService.TradingAgent
 
+open System.Threading.Tasks
+
 open Core.Model.Models
 open Service.ApplicationService.Cache
 open Service.ApplicationService.OrderManagement
+open Infrastructure.Client.ModuleAPI
 
 //check if a spread exists
 let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: TradingParameters) =
@@ -57,10 +60,18 @@ let placeOrder orderType exchange pair price quantity =
         let exchangeName = getExchangeName exchange
         printfn "%s, %A (%s), %s, %M, %M" pair exchange exchangeName orderType price quantity
     }
+    
+let getOrderStatus (order: Order) : Task<OrderStatus> =
+    task {
+        match order.Exchange with
+        | Bitfinex -> return! retrieveBitfinexOrderStatus order
+        | Kraken -> return! retrieveKrakenOrderStatus order
+        | Bitstamp -> return! retrieveBitstampOrderStatus order
+    }
 
 // Apply trading strategy
 let executeTrades (opportunity: ArbitrageOpportunity) (tradingParams: TradingParameters) (cacheAgent: MailboxProcessor<CacheMessage>) =
-    async {
+    task {
         // Maximum possible quantity to trade
         let buyQty = opportunity.BuyCachedQuote.RemainingAskSize
         let sellQty = opportunity.SellCachedQuote.RemainingBidSize
@@ -76,16 +87,20 @@ let executeTrades (opportunity: ArbitrageOpportunity) (tradingParams: TradingPar
         match potentialProfit >= tradingParams.MinTransactionProfit with
         | true ->
             printfn "Executing arbitrage opportunity for %s" opportunity.Pair
-            // Emit buy and sell
-            do! placeOrder "Buy" (getExchangeString opportunity.BuyCachedQuote.Quote.Exchange) opportunity.Pair opportunity.BuyCachedQuote.Quote.AskPrice maxQty
-            do! placeOrder "Sell" (getExchangeString opportunity.SellCachedQuote.Quote.Exchange) opportunity.Pair opportunity.SellCachedQuote.Quote.BidPrice maxQty
+            let! (submittedBuyOrder, submittedSellOrder) = emitBuySellOrders opportunity
+            // do! placeOrder "Buy" (getExchangeString opportunity.BuyCachedQuote.Quote.Exchange) opportunity.Pair opportunity.BuyCachedQuote.Quote.AskPrice maxQty
+            // do! placeOrder "Sell" (getExchangeString opportunity.SellCachedQuote.Quote.Exchange) opportunity.Pair opportunity.SellCachedQuote.Quote.BidPrice maxQty
+            let! buyStatus = getOrderStatus submittedBuyOrder
+            let! sellStatus = getOrderStatus submittedSellOrder
+            do! handleOrderStatus submittedBuyOrder buyStatus
+            do! handleOrderStatus submittedSellOrder sellStatus
             // Update remaining quantities
             cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.BuyCachedQuote.Quote.Exchange, 0M, -maxQty))
             cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.SellCachedQuote.Quote.Exchange, -maxQty, 0M))
         | false -> () 
     }
 
-   
+
 let processArbitrageOpportunities (cacheAgent: MailboxProcessor<CacheMessage>) (tradingParams: TradingParameters) =
     async {
         let! currentMarketData = cacheAgent.PostAndAsyncReply(GetAllQuotes)

@@ -10,8 +10,8 @@ let runTradingWorkflow (tradingParams: TradingParameters) (crossTradedCryptos: S
         |> List.map (fun record -> record.Pair)
     
     match List.length tradeHistory with
-        | count when count < numOfCrypto ->
-            printfn "Warning: Requested top %d cryptos, but only %d available in trade history." numOfCrypto count
+        | count when count < tradingParams.NumOfCrypto ->
+            printfn "Warning: Requested top %d cryptos, but only %d available in trade history." tradingParams.NumOfCrypto count
         | _ -> ()
     
     // Step 2: Check with cross-traded cryptocurrencies

@@ -8,8 +8,6 @@ open Newtonsoft.Json
 open Infrastructure.Repository.DatabaseInterface
 open Core.Model.Models
 
-
-
 let httpClient = new HttpClient()
 
 let bitfinexSubmitOrderUrl = "https://api.bitfinex.com/v2/auth/w/order/submit"

@@ -65,7 +65,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
         | _ -> printfn "Email notify user"
 }
 
-let emitBuySellOrders (opportunity: ArbitrageOpportunity) =
+let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let buyQuote = opportunity.BuyCachedQuote
     let sellQuote = opportunity.SellCachedQuote
 
@@ -121,8 +121,8 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) =
         Timestamp = DateTime.UtcNow
     }
 
-    // Submit Buy Order
-    let submittedBuyOrder =
+    // Submit Buy Order - Await the asynchronous operation
+    let! submittedBuyOrder =
         match buyOrder.Exchange with
         | Bitfinex ->
             submitBitfinexOrder buyOrder
@@ -130,11 +130,11 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) =
             submitKrakenOrder buyOrder
         | Bitstamp ->
             emitBitstampOrder buyOrder
-    
-    printfn $"%A{submittedBuyOrder}"
 
-    // Submit Sell Order
-    let submittedSellOrder =
+    printfn $"Submitted Buy Order: %A{submittedBuyOrder}"
+
+    // Submit Sell Order - Await the asynchronous operation
+    let! submittedSellOrder =
         match sellOrder.Exchange with
         | Bitfinex ->
             submitBitfinexOrder sellOrder
@@ -143,4 +143,8 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) =
         | Bitstamp ->
             emitBitstampOrder sellOrder
 
-    printfn $"%A{submittedSellOrder}"
+    printfn $"Submitted Sell Order: %A{submittedSellOrder}"
+
+    // Return the tuple of Orders
+    return (submittedBuyOrder, submittedSellOrder)
+}
