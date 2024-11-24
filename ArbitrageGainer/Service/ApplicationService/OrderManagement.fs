@@ -66,73 +66,81 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
 }
 
 let emitBuySellOrders (opportunity: ArbitrageOpportunity) =
-        let desiredAmount = opportunity.AvailableAmount
+    let buyQuote = opportunity.BuyCachedQuote
+    let sellQuote = opportunity.SellCachedQuote
 
-        // Configuration Constants
-        let MAX_TOTAL_TRANSACTION_VALUE = decimal 2000.0
+    let buyPrice = buyQuote.Quote.AskPrice
+    let sellPrice = sellQuote.Quote.BidPrice
 
-        // Ensure total transaction value does not exceed MAX_TOTAL_TRANSACTION_VALUE
-        let buyTotal = desiredAmount * opportunity.BuyPrice
-        let sellTotal = desiredAmount * opportunity.SellPrice
-        let totalTransactionValue = buyTotal + sellTotal
+    let availableBuyAmount = buyQuote.RemainingAskSize
+    let availableSellAmount = sellQuote.RemainingBidSize
+    let desiredAmount = Math.Min(availableBuyAmount, availableSellAmount)
 
-        let adjustedAmount =
-            if totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE then
-                // Adjust the amount to fit within the max total transaction value
-                let allowedAmount = MAX_TOTAL_TRANSACTION_VALUE / (opportunity.BuyPrice + opportunity.SellPrice)
-                Math.Floor(allowedAmount * 10000m) / 10000m // Round down to 4 decimal places
-            else
-                desiredAmount
+    // Configuration Constants
+    let MAX_TOTAL_TRANSACTION_VALUE = decimal 2000.0
 
-        // Ensure buy order quantity does not exceed the ask quantity (assumed to be AvailableAmount)
-        let finalAmount = Math.Min(adjustedAmount, opportunity.AvailableAmount)
+    // Ensure total transaction value does not exceed MAX_TOTAL_TRANSACTION_VALUE
+    let buyTotal = desiredAmount * buyPrice
+    let sellTotal = desiredAmount * sellPrice
+    let totalTransactionValue = buyTotal + sellTotal
 
-        // Create Buy Order
-        let buyOrder = {
-            Id = ObjectId.GenerateNewId().ToString()
-            Exchange = opportunity.BuyExchange
-            Symbol = opportunity.Symbol
-            Side = Buy
-            Price = opportunity.BuyPrice
-            Amount = finalAmount
-            RemainingAmount = finalAmount
-            OrderId = ""
-            Timestamp = DateTime.UtcNow
-        }
+    let adjustedAmount =
+        if totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE then
+            // Adjust the amount to fit within the max total transaction value
+            let allowedAmount = MAX_TOTAL_TRANSACTION_VALUE / (buyPrice + sellPrice)
+            Math.Floor(allowedAmount * 10000m) / 10000m // Round down to 4 decimal places
+        else
+            desiredAmount
 
-        // Create Sell Order
-        let sellOrder = {
-            Id = ObjectId.GenerateNewId().ToString()
-            Exchange = opportunity.SellExchange
-            Symbol = opportunity.Symbol
-            Side = Sell
-            Price = opportunity.SellPrice
-            Amount = finalAmount
-            RemainingAmount = finalAmount
-            OrderId = ""
-            Timestamp = DateTime.UtcNow
-        }
+    // Ensure final amount respects available amounts on both exchanges
+    let finalAmount = Math.Min(adjustedAmount, Math.Min(availableBuyAmount, availableSellAmount))
 
-        // Submit Buy Order
-        let submittedBuyOrder =
-            match buyOrder.Exchange with
-            | Bitfinex ->
-                submitBitfinexOrder buyOrder
-            | Kraken ->
-                submitKrakenOrder buyOrder
-            | Bitstamp ->
-                emitBitstampOrder buyOrder
-        
-        printfn $"%A{submittedBuyOrder}"
+    // Create Buy Order
+    let buyOrder = {
+        Id = ObjectId.GenerateNewId().ToString()
+        Exchange = buyQuote.Quote.Exchange
+        Symbol = buyQuote.Quote.Symbol
+        Side = Buy
+        Price = buyPrice
+        Amount = finalAmount
+        RemainingAmount = finalAmount
+        OrderId = ""
+        Timestamp = DateTime.UtcNow
+    }
 
-        // Submit Sell Order
-        let submittedSellOrder =
-            match sellOrder.Exchange with
-            | Bitfinex ->
-                submitBitfinexOrder sellOrder
-            | Kraken ->
-                submitKrakenOrder sellOrder
-            | Bitstamp ->
-                emitBitstampOrder sellOrder
-                
-        printfn $"%A{submittedSellOrder}"
+    // Create Sell Order
+    let sellOrder = {
+        Id = ObjectId.GenerateNewId().ToString()
+        Exchange = sellQuote.Quote.Exchange
+        Symbol = sellQuote.Quote.Symbol
+        Side = Sell
+        Price = sellPrice
+        Amount = finalAmount
+        RemainingAmount = finalAmount
+        OrderId = ""
+        Timestamp = DateTime.UtcNow
+    }
+
+    // Submit Buy Order
+    let submittedBuyOrder =
+        match buyOrder.Exchange with
+        | Bitfinex ->
+            submitBitfinexOrder buyOrder
+        | Kraken ->
+            submitKrakenOrder buyOrder
+        | Bitstamp ->
+            emitBitstampOrder buyOrder
+    
+    printfn $"%A{submittedBuyOrder}"
+
+    // Submit Sell Order
+    let submittedSellOrder =
+        match sellOrder.Exchange with
+        | Bitfinex ->
+            submitBitfinexOrder sellOrder
+        | Kraken ->
+            submitKrakenOrder sellOrder
+        | Bitstamp ->
+            emitBitstampOrder sellOrder
+
+    printfn $"%A{submittedSellOrder}"
