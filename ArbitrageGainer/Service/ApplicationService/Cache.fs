@@ -4,6 +4,12 @@ open Core.Model.Models
 open Microsoft.FSharp.Collections
 
 
+let toExchange (exchangeId: string) =
+    match exchangeId with
+    | "Bitfinex" -> Bitfinex
+    | "Kraken" -> Kraken
+    | "Bitstamp" -> Bitstamp
+    | _ -> failwith $"Unknown exchange: {exchangeId}"
 type CacheMessage =
     | UpdateCache of Quote
     | GetQuote of string * AsyncReplyChannel<Option<Quote>>
@@ -12,7 +18,7 @@ type CacheMessage =
 
 let createCacheAgent () =
     MailboxProcessor<CacheMessage>.Start(fun inbox ->
-        let rec loop (cache: Map<string, Map<string, CachedQuote>>) =
+        let rec loop (cache: Map<string, Map<Exchange, CachedQuote>>) =
             async {
                 let! msg = inbox.Receive()
                 match msg with
@@ -26,7 +32,7 @@ let createCacheAgent () =
                         match cache.TryFind quote.Pair with
                         | Some exchangeQuotes -> exchangeQuotes.Add(quote.Exchange, cachedQuote)
                         | None -> Map.ofList [(quote.Exchange, cachedQuote)]
-                    printfn "Cache updated with quote for %s from exchange %s" quote.Pair quote.Exchange
+                    printfn "Cache updated with quote for %s from exchange %A" quote.Pair quote.Exchange
                     let updatedCache = cache.Add(quote.Pair, updatedExchangeQuotes)
                     return! loop updatedCache
                 | GetAllQuotes replyChannel ->
@@ -41,7 +47,7 @@ let createCacheAgent () =
                     let updatedCache =
                         cache |> Map.change pair (fun exchangeQuotesOpt ->
                             exchangeQuotesOpt |> Option.map (fun exchangeQuotes ->
-                                exchangeQuotes |> Map.change exchange (fun cachedQuoteOpt ->
+                                exchangeQuotes |> Map.change (toExchange exchange) (fun cachedQuoteOpt ->
                                     cachedQuoteOpt |> Option.map (fun cachedQuote ->
                                         {
                                             cachedQuote with

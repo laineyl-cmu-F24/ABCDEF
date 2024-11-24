@@ -4,6 +4,13 @@ open System
 open System.Text.Json
 open Core.Model.Models
 
+let toExchange (exchangeId: string) =
+    match exchangeId with
+    | "Bitfinex" -> Bitfinex
+    | "Kraken" -> Kraken
+    | "Bitstamp" -> Bitstamp
+    | _ -> failwith $"Unknown exchange: {exchangeId}"
+
 let parseMessage(json: string) : ParseResult =
     try
         let messages = JsonSerializer.Deserialize<JsonElement[]>(json)
@@ -23,8 +30,9 @@ let parseMessage(json: string) : ParseResult =
                     let bidSize = message.GetProperty("bs").GetDecimal()
                     let timestamp = message.GetProperty("t").GetInt64()
                     let quote = {
+                        Symbol = pair
                         Pair =  pair
-                        Exchange = exchangeId.ToString()
+                        Exchange = toExchange (exchangeId.ToString())
                         BidPrice = bidPrice
                         BidSize = bidSize 
                         AskPrice = askPrice

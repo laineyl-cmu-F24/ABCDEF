@@ -6,11 +6,16 @@ type TradeRecord = {
     OpportunityCount: int
 }
 
+type Exchange =
+    | Bitfinex
+    | Kraken
+    | Bitstamp
+
 
 type Quote = {
     Symbol: string
     Pair: string
-    Exchange: string
+    Exchange: Exchange
     BidPrice: decimal
     BidSize: decimal
     AskPrice: decimal
@@ -79,11 +84,6 @@ type TradingParameters = {
     Email: string option
     PnLThreshold: decimal option
 }
-
-type Exchange =
-    | Bitfinex
-    | Kraken
-    | Bitstamp
     
 type Side = Buy | Sell
 
