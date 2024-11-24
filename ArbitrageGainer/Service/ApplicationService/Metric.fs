@@ -1,6 +1,7 @@
 module Service.ApplicationService.Metric
 
 open System
+open Core.Model.Models
 
 type TradingParameters = {
     NumOfCrypto: int
@@ -13,23 +14,16 @@ type TradingParameters = {
     PnLThreshold: decimal option
 }
 
-type ValidationError = 
-    | NegativeInitialInvestment
-    | InvalidTimeRange
 
-type ValidationResult<'Success> = 
-    | Ok of 'Success
-    | Error of ValidationError
-
-let validateInitialAmount (amount:decimal):ValidationResult<decimal> =
+let validateInitialAmount (amount:decimal) =
     match amount <= 0M with
     | false -> Ok amount
-    | _ -> Error NegativeInitialInvestment
+    | _ -> Error (ValidationError NegativeInitialInvestment)
 
-let validateTimeInterval (startTime:int64) (endTime:int64) : ValidationResult<int64*int64> =
+let validateTimeInterval (startTime:int64) (endTime:int64) =
     match endTime <= startTime with
     | false -> Ok (startTime, endTime)
-    | true ->  Error InvalidTimeRange
+    | true ->  Error (ValidationError InvalidTimeRange)
 
 let calculateAnnualizedMetric (startTime: int64) (endTime: int64) (PL: decimal) (initialInvestment: decimal) =
     let durationInYear = float (endTime - startTime) / 3.154e+10
@@ -40,7 +34,7 @@ let calculateAnnualizedMetric (startTime: int64) (endTime: int64) (PL: decimal) 
 
 let rec AnnualizedMetric initialAmount startTradingTime =
     match startTradingTime with
-    | None -> Error InvalidTimeRange // Handle case where trading hasn't started
+    | None -> Error (ValidationError InvalidTimeRange) // Handle case where trading hasn't started
     | Some startTime -> 
         let endTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() 
         let pl = 100M 

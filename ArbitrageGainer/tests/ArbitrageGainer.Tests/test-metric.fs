@@ -1,6 +1,7 @@
 module ArbitrageGainer.Tests.Metric
 open NUnit.Framework
 open Service.ApplicationService.Metric
+open Core.Model.Models
 
 [<Test>]
 let ``validateInitialAmount should return Ok for positive amount`` () =
@@ -14,7 +15,7 @@ let ``validateInitialAmount should return Error for zero amount`` () =
     let result = validateInitialAmount 0M
     match result with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
-    | Error NegativeInitialInvestment -> Assert.Pass()
+    | Error (ValidationError NegativeInitialInvestment) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")
 
 [<Test>]
@@ -22,7 +23,7 @@ let ``validateInitialAmount should return Error for negative amount`` () =
     let result = validateInitialAmount -50M
     match result with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
-    | Error NegativeInitialInvestment -> Assert.Pass()
+    | Error (ValidationError NegativeInitialInvestment) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")
 
 [<Test>]
@@ -43,7 +44,7 @@ let ``validateTimeInterval should return Error for invalid time range`` () =
     let result = validateTimeInterval startTime endTime
     match result with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
-    | Error InvalidTimeRange -> Assert.Pass()
+    | Error (ValidationError InvalidTimeRange) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")
 
 
@@ -61,7 +62,7 @@ let ``AnnualizedMetric should return Error for negative initial amount`` () =
     let startingTime = Some 1729728000000L
     match AnnualizedMetric initialAmount startingTime with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
-    | Error NegativeInitialInvestment -> Assert.Pass()
+    | Error (ValidationError NegativeInitialInvestment) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")
 
 [<Test>]
@@ -70,5 +71,5 @@ let ``AnnualizedMetric should return Error for zero initial amount`` () =
     let startingTime = Some 1729728000000L
     match AnnualizedMetric initialAmount startingTime with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
-    | Error NegativeInitialInvestment -> Assert.Pass()
+    | Error (ValidationError NegativeInitialInvestment) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")
