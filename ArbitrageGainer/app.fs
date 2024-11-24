@@ -4,6 +4,7 @@ open System.IO
 open Suave
 open Suave.Operators
 open Suave.Filters
+open MongoDB.Driver
 
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
@@ -12,6 +13,8 @@ open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
+
+
 
 type TradingParameters = {
     NumOfCrypto: int

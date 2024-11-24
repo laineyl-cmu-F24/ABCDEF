@@ -36,3 +36,20 @@ let createCurrencyPair (pairName: string) =
         Ok ()
     with
     | ex -> Error (DatabaseError ex.Message)
+    
+let orderCollection = db.GetCollection<Order>("orders")
+let saveOrder order =
+    try
+        let _ = orderCollection.InsertOne(order)
+        Ok ()
+    with
+    | ex -> Error (DatabaseError ex.Message)
+    
+let transactionCollection = db.GetCollection<Transaction>("transactions")
+let saveTransaction transaction =
+    try
+        let _ = transactionCollection.InsertOne(transaction)
+        Ok ()
+    with
+    | ex -> Error (DatabaseError ex.Message)
+

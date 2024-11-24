@@ -13,12 +13,14 @@
   <ItemGroup>
       <Compile Include="Service\ApplicationService\Cache.fs" />
       <Compile Include="Service\ApplicationService\Workflow.fs" />
+      <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
       <Compile Include="Infrastructure\Client\WebSocketClient.fs" />
+      <Compile Include="Infrastructure\Client\ModuleAPI.fs" />
       <Compile Include="Service\ApplicationService\Historical_Calculation.fs" />
       <Compile Include="Service\ApplicationService\MarketData.fs" />
       <Compile Include="Service\ApplicationService\metric.fs" />
-      <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
       <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
+      <Compile Include="Service\ApplicationService\OrderManagement.fs" />
       <Compile Include="app.fs" />
       <Content Include="README.md" />
 
