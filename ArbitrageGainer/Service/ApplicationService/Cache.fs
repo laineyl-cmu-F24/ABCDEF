@@ -47,7 +47,7 @@ let createCacheAgent () =
                     let updatedCache =
                         cache |> Map.change pair (fun exchangeQuotesOpt ->
                             exchangeQuotesOpt |> Option.map (fun exchangeQuotes ->
-                                exchangeQuotes |> Map.change (toExchange exchange) (fun cachedQuoteOpt ->
+                                exchangeQuotes |> Map.change exchange (fun cachedQuoteOpt ->
                                     cachedQuoteOpt |> Option.map (fun cachedQuote ->
                                         {
                                             cachedQuote with
