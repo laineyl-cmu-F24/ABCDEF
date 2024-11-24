@@ -4,6 +4,7 @@ open System.IO
 open Suave
 open Suave.Operators
 open Suave.Filters
+open MongoDB.Driver
 
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
