@@ -11,8 +11,10 @@ open Service.ApplicationService.Metric
 open Service.ApplicationService.CrossTradedCurrencyPair
 open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
+open Service.ApplicationService.PnL
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
+
 
 type SystemState = {
     TradingParams: TradingParameters option
@@ -27,7 +29,6 @@ type AgentMessage =
     | GetCurrentState of AsyncReplyChannel<SystemState>
     | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
     | ToggleTrading of bool * Option<unit -> Async<DomainResult<unit>>> * AsyncReplyChannel<SystemState>
-    
     
 let initialState = {
     TradingParams = None
@@ -82,6 +83,15 @@ let handleRequest func =
             return! response context
         }
 
+// handle requests that does not involve stateAgent      
+let handleSimpleRequest func =
+    fun (context: HttpContext) ->
+        async {
+            let! response, _ = func context
+            return! response context
+        }
+
+
 let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
         let req = context.request
@@ -121,7 +131,6 @@ let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
             return (RequestErrors.NOT_FOUND "Error when getting trading parameters\n", ())
     }
     
-
 let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext)  =
     async {
         let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
@@ -218,6 +227,69 @@ let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpC
         |_ -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
     }
 
+let getPnL (context: HttpContext) =
+    async {
+        let! currentPnL = getCurrentPnL // Await the async result
+        let responseFunc = Successful.OK (sprintf "Current P&L: %.2f" currentPnL)
+        return (responseFunc, ())
+    }
+
+let getHistoricalPnL (context: HttpContext) =
+    async {
+        let query = context.request.query
+        let findParam key =
+            query
+            |> List.tryFind (fun (k, _) -> k = key)
+            |> Option.bind snd // Extract the value from the option tuple
+
+        let startingStrOpt = findParam "starting"
+        let endingStrOpt = findParam "ending"
+        
+        match startingStrOpt, endingStrOpt with
+        | Some startingStr, Some endingStr ->
+            match DateTime.TryParse(startingStr), DateTime.TryParse(endingStr) with
+            | (true, starting), (true, ending) ->
+                let! historicalPnL = getHistoricalPnLWithIn starting ending
+                match historicalPnL with
+                | Some pnl -> 
+                    let responseFunc = Successful.OK (sprintf "Historical P&L: %.2f" pnl)
+                    return (responseFunc, ()) // Return the tuple
+                | None -> 
+                    let responseFunc = RequestErrors.BAD_REQUEST "No historical P&L data found"
+                    return (responseFunc, ())
+            | _ -> 
+                let responseFunc = RequestErrors.BAD_REQUEST "Invalid date format"
+                return (responseFunc, ())
+        | _ -> 
+            let responseFunc = RequestErrors.BAD_REQUEST "Missing starting or ending parameter"
+            return (responseFunc, ())
+    }
+
+let setPnlThreshold (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+    async {
+        let req = context.request
+        match req.formData "threshold" with
+        | Choice1Of2 thresholdStr ->
+            match Decimal.TryParse(thresholdStr) with
+            | true, threshold when threshold >= 0m ->
+                let! currentState = stateAgent.PostAndAsyncReply(GetCurrentState)
+                match currentState.TradingParams with
+                | Some tp ->
+                    let newTp = { tp with PnLThreshold = Some threshold }
+                    let! _ = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(newTp, reply))
+                    let responseFunc = Successful.OK (sprintf "PnL Threshold set to %.2f\n" threshold)
+                    return (responseFunc, ())
+                | None ->
+                    let responseFunc = RequestErrors.BAD_REQUEST "Trading parameters are not set\n"
+                    return (responseFunc, ())
+            | _ ->
+                let responseFunc = RequestErrors.BAD_REQUEST "Invalid threshold value\n"
+                return (responseFunc, ())
+        | _ ->
+            let responseFunc = RequestErrors.BAD_REQUEST "Missing required threshold parameter\n"
+            return (responseFunc, ())
+    }
+
 let app =
     choose [
         POST >=> path "/api/strategy" >=> handleRequest setTradingParameters
@@ -226,6 +298,9 @@ let app =
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
         GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
+        GET >=> path "/api/pnl" >=> handleSimpleRequest getPnL
+        GET >=> path "/api/pnl/" >=> handleSimpleRequest getHistoricalPnL 
+        POST >=> path "/api/pnl" >=> handleRequest setPnlThreshold
     ]
 
 startWebServer defaultConfig app
