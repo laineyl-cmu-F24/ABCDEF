@@ -9,8 +9,9 @@ open System.Text
 open Core.Model.Models
 open Core.CoreService.ParsingMessage
 open Service.ApplicationService.Cache
+open Service.ApplicationService.TradingAgent
 
-let WebSocketClient uri apiKey symbols =
+let WebSocketClient uri apiKey symbols tradingParams =
     let wsClient = new ClientWebSocket()
     let cacheAgent = createCacheAgent()
     
@@ -111,9 +112,8 @@ let WebSocketClient uri apiKey symbols =
                                     |Ok message ->
                                         match parseMessage message with
                                         | QuoteReceived quote ->
+                                            do! processArbitrageOpportunities cacheAgent tradingParams
                                             cacheAgent.Post(UpdateCache quote)
-                                            printfn "Printing cache after update:"
-                                            cacheAgent.Post(PrintCache)
                                             return! receiveLoop()
                                         | StatusReceived statusMsg ->
                                             return! receiveLoop()

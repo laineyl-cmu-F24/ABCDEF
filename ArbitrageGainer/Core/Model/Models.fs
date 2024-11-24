@@ -6,13 +6,39 @@ type TradeRecord = {
     OpportunityCount: int
 }
 
+
 type Quote = {
     Symbol: string
+    Pair: string
     Exchange: string
     BidPrice: decimal
+    BidSize: decimal
     AskPrice: decimal
+    AskSize: decimal
     Timestamp: DateTime
 }
+
+type CachedQuote = {
+    Quote: Quote
+    RemainingBidSize: decimal
+    RemainingAskSize: decimal
+}
+
+type ArbitrageOpportunity = {
+    Pair: string
+    BuyCachedQuote: CachedQuote
+    SellCachedQuote: CachedQuote
+    Spread: decimal
+}
+
+//type ArbitrageOpportunity = {
+  //  Symbol: string
+  //  BuyExchange: Exchange
+  //  SellExchange: Exchange
+  //  BuyPrice: decimal
+  //  SellPrice: decimal
+  //  AvailableAmount: decimal
+//}
 
 type StatusMessage = {
     ev: string
@@ -43,11 +69,22 @@ type Message = {
     params: string
 }
 
+type TradingParameters = {
+    NumOfCrypto: int
+    MinSpreadPrice: decimal
+    MinTransactionProfit: decimal
+    MaxTransactionValue: decimal
+    MaxTradeValue: decimal
+    InitialInvestmentAmount: decimal
+    Email: string option
+    PnLThreshold: decimal option
+}
+
 type Exchange =
     | Bitfinex
     | Kraken
     | Bitstamp
-
+    
 type Side = Buy | Sell
 
 type Order = {
@@ -78,15 +115,6 @@ type Transaction = {
     Price: decimal
     Amount: decimal
     Timestamp: DateTime
-}
-
-type ArbitrageOpportunity = {
-    Symbol: string
-    BuyExchange: Exchange
-    SellExchange: Exchange
-    BuyPrice: decimal
-    SellPrice: decimal
-    AvailableAmount: decimal
 }
 
 type BitfinexSubmitOrderRequest = {

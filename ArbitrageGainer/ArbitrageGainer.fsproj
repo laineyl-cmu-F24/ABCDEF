@@ -6,13 +6,13 @@
   </PropertyGroup>
     <ItemGroup>
         <Compile Include="Core\Model\Models.fs" />
-        <Compile Include="Core\CoreService\Helper.fs" />
         <Compile Include="Core\CoreService\ParsingMessage.fs" />
     </ItemGroup>
 
   <ItemGroup>
       <Compile Include="Service\ApplicationService\Cache.fs" />
       <Compile Include="Service\ApplicationService\Workflow.fs" />
+      <Compile Include="Service\ApplicationService\TradingAgent.fs" />
       <Compile Include="Infrastructure\Client\WebSocketClient.fs" />
       <Compile Include="Service\ApplicationService\Historical_Calculation.fs" />
       <Compile Include="Service\ApplicationService\MarketData.fs" />
