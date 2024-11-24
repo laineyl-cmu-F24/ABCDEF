@@ -18,7 +18,7 @@
       <Compile Include="Infrastructure\Client\ModuleAPI.fs" />
       <Compile Include="Service\ApplicationService\Historical_Calculation.fs" />
       <Compile Include="Service\ApplicationService\MarketData.fs" />
-      <Compile Include="Service\ApplicationService\metric.fs" />
+      <Compile Include="Service\ApplicationService\Metric.fs" />
       <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
       <Compile Include="Service\ApplicationService\PnL_Calculation.fs" />
       <Compile Include="Service\ApplicationService\OrderManagement.fs" />

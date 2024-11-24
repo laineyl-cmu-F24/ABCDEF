@@ -19,6 +19,7 @@ type SystemState = {
     IsTradingActive: bool
     TradeHistory: TradeRecord list
     WebSocketClientCloseFunc: Option<unit -> Async<DomainResult<unit>>>
+    StartTradingTime: int64 option
 }
 
 type AgentMessage =
@@ -33,6 +34,7 @@ let initialState = {
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc =  None
+    StartTradingTime = None
 }
 
 let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
@@ -53,7 +55,20 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
                 reply.Reply(updatedState)
                 return! loop updatedState
             | ToggleTrading (isActive, closeFuncOpt, reply) ->
-                let updatedState = { state with IsTradingActive = isActive; WebSocketClientCloseFunc =  closeFuncOpt; }
+                let updatedState =
+                    match isActive with
+                    | true -> {
+                            state with
+                                IsTradingActive = isActive
+                                WebSocketClientCloseFunc =  closeFuncOpt
+                                StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
+                                }
+                    | false -> {
+                            state with
+                                 IsTradingActive = false
+                                 WebSocketClientCloseFunc = None
+                                 StartTradingTime = None // Clear start time
+                                 }
                 reply.Reply(updatedState)
                 return! loop updatedState
         }
@@ -190,18 +205,17 @@ let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (con
 let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
         let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
-        match currTradingState.TradingParams with
-        | Some tradingParams ->
+        match currTradingState.TradingParams, currTradingState.StartTradingTime with
+        | Some tradingParams, startTimeOpt ->
             try
                 let initialAmount = tradingParams.InitialInvestmentAmount
-                let annualReturn = AnnualizedMetric initialAmount // Perform the annual return calculation here
+                let annualReturn = AnnualizedMetric initialAmount, startTimeOpt  // Pass start time
 
                 return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
             with
-                | ex ->
-                    return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: %s{ex.Message}")
+            | ex -> return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: %s{ex.Message}")
 
-        | None -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
+        |_ -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
     }
 
 let app =
