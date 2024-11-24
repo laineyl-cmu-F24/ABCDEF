@@ -59,10 +59,6 @@ type ParseSuccessResult =
 type ValidationError = 
     | NegativeInitialInvestment
     | InvalidTimeRange
-
-// type ValidationResult<'Success> = 
-//     | Ok of 'Success
-//     | Error of ValidationError
     
 type DomainError =
     | ConnectionError of string

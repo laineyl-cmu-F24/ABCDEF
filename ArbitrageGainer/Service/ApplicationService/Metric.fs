@@ -3,18 +3,6 @@ module Service.ApplicationService.Metric
 open System
 open Core.Model.Models
 
-type TradingParameters = {
-    NumOfCrypto: int
-    MinSpreadPrice: decimal
-    MinTransactionProfit: decimal
-    MaxTransactionValue: decimal
-    MaxTradeValue: decimal
-    InitialInvestmentAmount: decimal
-    Email: string option
-    PnLThreshold: decimal option
-}
-
-
 let validateInitialAmount (amount:decimal) =
     match amount <= 0M with
     | false -> Ok amount
@@ -32,16 +20,15 @@ let calculateAnnualizedMetric (startTime: int64) (endTime: int64) (PL: decimal) 
     // printfn $"Requested annual: %A{result}"
     // result
 
-let rec AnnualizedMetric initialAmount startTradingTime =
+let rec AnnualizedMetric initialAmount startTradingTime pnlResult =
     match startTradingTime with
     | None -> Error (ValidationError InvalidTimeRange) // Handle case where trading hasn't started
     | Some startTime -> 
         let endTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() 
-        let pl = 100M 
         match validateInitialAmount initialAmount with
         | Error e -> Error e
         | Ok validAmount -> 
             match validateTimeInterval startTime endTime with
             | Error e -> Error e
             | Ok (validStart, validEnd) ->
-                Ok (calculateAnnualizedMetric validStart validEnd pl validAmount)
+                Ok (calculateAnnualizedMetric validStart validEnd pnlResult validAmount)

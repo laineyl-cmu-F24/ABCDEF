@@ -52,7 +52,8 @@ let ``validateTimeInterval should return Error for invalid time range`` () =
 let ``AnnualizedMetric should return Ok with correct metric for valid input`` () =
     let initialAmount = 1000M
     let startingTime = Some 1729728000000L
-    match AnnualizedMetric initialAmount startingTime with
+    let pnlValue = 1500M // Mock PnL value
+    match AnnualizedMetric initialAmount startingTime pnlValue with
     | Ok metric -> Assert.Pass($"Expected Ok with result: {metric}")
     | Error _ -> Assert.Fail("Expected Ok but got Error")
 
@@ -60,7 +61,8 @@ let ``AnnualizedMetric should return Ok with correct metric for valid input`` ()
 let ``AnnualizedMetric should return Error for negative initial amount`` () =
     let initialAmount = -100M
     let startingTime = Some 1729728000000L
-    match AnnualizedMetric initialAmount startingTime with
+    let pnlValue = 1500M // Mock PnL value
+    match AnnualizedMetric initialAmount startingTime pnlValue with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
     | Error (ValidationError NegativeInitialInvestment) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")
@@ -69,7 +71,8 @@ let ``AnnualizedMetric should return Error for negative initial amount`` () =
 let ``AnnualizedMetric should return Error for zero initial amount`` () =
     let initialAmount = 0M
     let startingTime = Some 1729728000000L
-    match AnnualizedMetric initialAmount startingTime with
+    let pnlValue = 1500M // Mock PnL value
+    match AnnualizedMetric initialAmount startingTime pnlValue with
     | Ok _ -> Assert.Fail("Expected Error but got Ok")
     | Error (ValidationError NegativeInitialInvestment) -> Assert.Pass()
     | Error _ -> Assert.Fail("Unexpected error type")

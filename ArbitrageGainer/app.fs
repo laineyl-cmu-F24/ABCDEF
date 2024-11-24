@@ -11,6 +11,7 @@ open Service.ApplicationService.Metric
 open Service.ApplicationService.CrossTradedCurrencyPair
 open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
+open Service.ApplicationService.PnL
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
 
@@ -209,8 +210,8 @@ let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpC
         | Some tradingParams, startTimeOpt ->
             try
                 let initialAmount = tradingParams.InitialInvestmentAmount
-                let annualReturn = AnnualizedMetric initialAmount, startTimeOpt  // Pass start time
-
+                let! pnlValue = getCurrentPnL
+                let annualReturn = AnnualizedMetric initialAmount startTimeOpt pnlValue // Pass start time & pnl
                 return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
             with
             | ex -> return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: %s{ex.Message}")
