@@ -78,3 +78,4 @@ let getHistoricalPnLWithIn (starting: DateTime) (ending: DateTime) =
 // Reset the PnL Agent
 let resetPnLAgent =
     PnLAgent.Post(ResetAgent)
+

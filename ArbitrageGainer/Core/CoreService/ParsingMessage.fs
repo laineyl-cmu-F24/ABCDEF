@@ -11,7 +11,7 @@ let toExchange (exchangeId: string) =
     | "Bitstamp" -> Bitstamp
     | _ -> failwith $"Unknown exchange: {exchangeId}"
 
-let parseMessage(json: string) : ParseResult =
+let parseMessage(json: string) =
     try
         let messages = JsonSerializer.Deserialize<JsonElement[]>(json)
         match messages.Length > 0 with
@@ -39,17 +39,17 @@ let parseMessage(json: string) : ParseResult =
                         AskSize = askSize 
                         Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).UtcDateTime
                     }
-                    QuoteReceived quote
+                    Ok (QuoteReceived quote)
                 |_ ->
-                    ParseError "Skipping quote from unsupported exchange"
+                    Error (ParseError "Skipping quote from unsupported exchange")
             |"status" ->
                 let status = message.GetProperty("status").GetString()
                 let statusMessage = message.GetProperty("message").GetString()
                 let statusMsg = { ev = "status"; status = status; message = statusMessage }
-                StatusReceived statusMsg
+                Ok (StatusReceived statusMsg)
             |_ ->
-                ParseError $"Unknown or unsupported event type: {ev}"
+                Error (ParseError $"Unknown or unsupported event type: {ev}")
         |false ->
-            ParseError "Empty message array"
+            Error (ParseError "Empty message array")
     with ex ->
-        ParseError ex.Message
+        Error (ParseError ex.Message)

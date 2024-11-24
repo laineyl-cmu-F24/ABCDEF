@@ -14,6 +14,9 @@ open Service.ApplicationService.MarketData
 open Service.ApplicationService.PnL
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
+open  Service.ApplicationService.TradingAgent
+open Service.ApplicationService.Cache
+
 
 
 type SystemState = {
@@ -154,6 +157,7 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
                 | Ok closeFunc ->
                     let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some closeFunc, reply))
                     printfn "Trading started."
+                    let! trade = processArbitrageOpportunities (createCacheAgent()) tradingParams
                     return (Successful.OK "Trading started\n", ())
                 | Error e ->
                     printfn "Failed to start trading: %A" e
@@ -218,8 +222,8 @@ let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpC
         | Some tradingParams, startTimeOpt ->
             try
                 let initialAmount = tradingParams.InitialInvestmentAmount
-                let annualReturn = AnnualizedMetric initialAmount, startTimeOpt  // Pass start time
-
+                let! pnlValue = getCurrentPnL
+                let annualReturn = AnnualizedMetric initialAmount startTimeOpt pnlValue // Pass start time & pnl
                 return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
             with
             | ex -> return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: %s{ex.Message}")
