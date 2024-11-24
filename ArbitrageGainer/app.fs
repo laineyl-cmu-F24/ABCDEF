@@ -14,6 +14,9 @@ open Service.ApplicationService.MarketData
 open Service.ApplicationService.PnL
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
+open  Service.ApplicationService.TradingAgent
+open Service.ApplicationService.Cache
+
 
 type SystemState = {
     TradingParams: TradingParameters option
@@ -146,6 +149,7 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
                 | Ok closeFunc ->
                     let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some closeFunc, reply))
                     printfn "Trading started."
+                    let! trade = processArbitrageOpportunities (createCacheAgent()) tradingParams
                     return (Successful.OK "Trading started\n", ())
                 | Error e ->
                     printfn "Failed to start trading: %A" e
