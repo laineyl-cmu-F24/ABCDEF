@@ -111,13 +111,13 @@ let WebSocketClient uri apiKey symbols tradingParams =
                                     |Error e -> return Error e
                                     |Ok message ->
                                         match parseMessage message with
-                                        | QuoteReceived quote ->
+                                        | Ok (QuoteReceived quote) ->
                                             do! processArbitrageOpportunities cacheAgent tradingParams
                                             cacheAgent.Post(UpdateCache quote)
                                             return! receiveLoop()
-                                        | StatusReceived statusMsg ->
+                                        | Ok (StatusReceived statusMsg) ->
                                             return! receiveLoop()
-                                        |ParseError err -> return! receiveLoop()
+                                        | Error (ParseError err) -> return! receiveLoop()
                                 }
                             let! receiveResult = receiveLoop()
                             return receiveResult        

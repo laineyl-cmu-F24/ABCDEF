@@ -1,5 +1,6 @@
 module Core.Model.Models
 open System
+open FSharp.Data
 
 type TradeRecord = {
     Pair: string
@@ -51,18 +52,22 @@ type StatusMessage = {
     message: string
 }
 
-type ParseResult =
+type ParseSuccessResult =
     | QuoteReceived of Quote
     | StatusReceived of StatusMessage
-    | ParseError of string
-   
+    
+type ValidationError = 
+    | NegativeInitialInvestment
+    | InvalidTimeRange
+    
 type DomainError =
     | ConnectionError of string
     | AuthenticationError of string
     | SubscriptionError of string
     | DataError of string
     | DatabaseError of string
-    | PairParseError of string
+    | ParseError of string
+    | ValidationError of ValidationError
 
 
 type DomainResult<'Success> = 
