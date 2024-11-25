@@ -1,6 +1,7 @@
 module Service.ApplicationService.PnL
 open System
 open Core.Model.Models
+open  Service.ApplicationService.Toggle
 
 type PnLState = {
     TotalPnL: decimal
@@ -51,7 +52,8 @@ let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
                     | Some email -> sendEmail email "Threshold Reached" (sprintf "Your PnL has reached %.2f." newTotalPnL)
                     | _ -> ()
                     return! loop { state with TotalPnL = newTotalPnL; PnLThreshold = None }
-                    //TODO: stop trading here !!! 
+                    //TODO: stop trading here !!!
+                    toggleTrading ()
                 | _ -> return! loop {state with TotalPnL = newTotalPnL}
                
             | SetThreshold threshold ->

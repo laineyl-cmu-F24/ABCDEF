@@ -12,6 +12,7 @@ open Service.ApplicationService.CrossTradedCurrencyPair
 open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
 open Service.ApplicationService.PnL
+open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
 open  Service.ApplicationService.TradingAgent
@@ -82,13 +83,14 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
 let handleRequest func =
     fun (context: HttpContext) ->
         async {
-            let! response, _ = func stateAgent context
+            let! response, _ = func context
             return! response context
         }
 
-let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+let setTradingParameters  (context: HttpContext) =
     async {
         let req = context.request
+        let! initialState = getTradingParameters ()
         match req.formData "NumOfCrypto", req.formData "MinSpreadPrice", req.formData "MinTransactionProfit",
               req.formData "MaxTransactionValue", req.formData "MaxTradeValue", req.formData "InitialInvestmentAmount", 
               req.formData "Email", req.formData "PnLThreshold" with
@@ -108,7 +110,8 @@ let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
                                    | null | "" -> None
                                    | _ -> Some (decimal pnlThreshold)
                 }
-            let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(parameters, reply))
+            setTradingParameters parameters
+            let! updatedState = getTradingParameters ()
             // printfn $"Updated State: %A{updatedState}"
             return (Successful.OK "Trading parameters updated successfully\n", updatedState)
         | _ -> return (RequestErrors.BAD_REQUEST "Invalid parameters provided\n", initialState)
@@ -209,7 +212,7 @@ let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (con
     
 let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
     async {
-        let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
+        let! currTradingState = getTradingState ()
         match currTradingState.TradingParams, currTradingState.StartTradingTime with
         | Some tradingParams, startTimeOpt ->
             try
