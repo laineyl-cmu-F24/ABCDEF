@@ -14,70 +14,7 @@ open Service.ApplicationService.MarketData
 open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
 open Core.Model.Models
-open Infrastructure.Client.WebSocketClient
-open  Service.ApplicationService.TradingAgent
-open Service.ApplicationService.Cache
 open Service.ApplicationService.Toggle
-
-type SystemState = {
-    TradingParams: TradingParameters option
-    IsTradingActive: bool
-    TradeHistory: TradeRecord list
-    WebSocketClientCloseFunc: Option<unit -> Async<DomainResult<unit>>>
-    StartTradingTime: int64 option
-}
-
-type AgentMessage =
-    | SetTradingParameters of TradingParameters * AsyncReplyChannel<SystemState>
-    | GetCurrentState of AsyncReplyChannel<SystemState>
-    | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
-    | ToggleTrading of bool * Option<unit -> Async<DomainResult<unit>>> * AsyncReplyChannel<SystemState>
-    
-let initialState = {
-    TradingParams = None
-    IsTradingActive = false
-    TradeHistory = []
-    WebSocketClientCloseFunc =  None
-    StartTradingTime = None
-}
-
-let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
-    let rec loop state =
-        async {
-            let! message = inbox.Receive()
-            match message with
-            | SetTradingParameters (p, reply) ->
-                // printfn $"Current State: %A{state}"
-                let updatedState = { state with TradingParams = Some p }
-                reply.Reply(updatedState)
-                return! loop updatedState
-            | GetCurrentState reply ->
-                reply.Reply(state)
-                return! loop state
-            | GetTradeHistory (newTrades, reply) ->
-                let updatedState = { state with TradeHistory = newTrades }
-                reply.Reply(updatedState)
-                return! loop updatedState
-            | ToggleTrading (isActive, closeFuncOpt, reply) ->
-                let updatedState =
-                    match isActive with
-                    | true -> {
-                            state with
-                                IsTradingActive = isActive
-                                WebSocketClientCloseFunc =  closeFuncOpt
-                                StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
-                                }
-                    | false -> {
-                            state with
-                                 IsTradingActive = false
-                                 WebSocketClientCloseFunc = None
-                                 StartTradingTime = None // Clear start time
-                                 }
-                reply.Reply(updatedState)
-                return! loop updatedState
-        }
-    loop initialState
-)
 
 let handleRequest func =
     fun (context: HttpContext) ->
@@ -94,7 +31,7 @@ let handleSimpleRequest func =
             return! response context
         }
         
-let setTradingParameters  (context: HttpContext) =
+let setTradingParameters (context: HttpContext) =
     async {
         let req = context.request
         let! initialState = getTradingParameters ()
@@ -124,7 +61,7 @@ let setTradingParameters  (context: HttpContext) =
         | _ -> return (RequestErrors.BAD_REQUEST "Invalid parameters provided\n", initialState)
     }
     
-let getTradingParameters  (context: HttpContext) =
+let getTradingParameters (context: HttpContext) =
     async {
         let! currentParam = getTradingParameters ()
         match currentParam with
@@ -135,54 +72,6 @@ let getTradingParameters  (context: HttpContext) =
             return (RequestErrors.NOT_FOUND "Error when getting trading parameters\n", ())
     }
     
-
-let toggleTrading (context: HttpContext) =
-    async {
-        let! currState = getTradingState ()
-        match currState.IsTradingActive with
-        | false ->
-            match currState.TradingParams with
-            | Some tradingParams ->
-                let tradeHistory = currState.TradeHistory
-                let crossTradedCryptos = Set.ofSeq findCurrencyPairs
-                let uri = Uri("wss://one8656-live-data.onrender.com/")
-                let apiKey = ""
-                let filteredCrypto = runTradingWorkflow tradingParams crossTradedCryptos tradeHistory
-                let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCrypto tradingParams
-                let! result = toggleRealTimeData true tradingParams crossTradedCryptos tradeHistory uri apiKey
-                match result with
-                | Ok closeFunc ->
-                    let! updatedState =
-                        stateAgent.PostAndAsyncReply(fun reply ->
-                            ToggleTrading(true, Some closeFunc, reply)
-                        )
-                    printfn "Trading started."
-                    let! _ = processArbitrageOpportunities (createCacheAgent()) tradingParams
-                    return (Successful.OK "Trading started\n", ())
-                | Error e ->
-                    printfn "Failed to start trading: %A" e
-                    return (RequestErrors.BAD_REQUEST (sprintf "Failed to start trading: %A" e), ())
-            | None ->
-                return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
-        | true ->
-            match currState.WebSocketClientCloseFunc with
-            | Some closeFunc ->
-                let! closeResult = closeFunc()
-                match closeResult with
-                | Ok () ->
-                    let! updatedState =
-                        stateAgent.PostAndAsyncReply(fun reply ->
-                            ToggleTrading(false, None, reply)
-                        )
-                    printfn "Trading stopped."
-                    return (Successful.OK "Trading stopped\n", ())
-                | Error e ->
-                    printfn "Error during close: %A" e
-                    return (RequestErrors.BAD_REQUEST "Failed to stop trading", ())
-            | None ->
-                return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
-    }
-
     
 let getHistoricalArbitrage (context: HttpContext) =
     async {
@@ -202,10 +91,10 @@ let getHistoricalArbitrage (context: HttpContext) =
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)
                     // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply)) 
-                    return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
+                    return (Successful.OK "Success\n", $"Got historical arbitrage {result}")
                 with
                 | ex ->
-                    return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
+                    return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: {ex.Message}")
             | _ -> return (RequestErrors.NOT_FOUND "Error\n", "File not found")
         | _ -> return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
     }
@@ -214,10 +103,10 @@ let getCrossTradeCurrencyPairs (context: HttpContext) =
     async {
         try
             let currencyPair = findCurrencyPairs
-            return (Successful.OK "Success\n", $"Got cross-trade currency pairs: %A{currencyPair}")
+            return (Successful.OK "Success\n", $"Got cross-trade currency pairs: {currencyPair}")
         with
         | ex ->
-            return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: %s{ex.Message}")
+            return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: {ex.Message}")
     }
     
 let getAnnualReturn (context: HttpContext) =
@@ -229,9 +118,9 @@ let getAnnualReturn (context: HttpContext) =
                 let initialAmount = tradingParams.InitialInvestmentAmount
                 let! pnlValue = getCurrentPnL
                 let annualReturn = AnnualizedMetric initialAmount startTimeOpt pnlValue // Pass start time & pnl
-                return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
+                return (Successful.OK "Success\n", $"Got annualReturn: {annualReturn}")
             with
-            | ex -> return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: %s{ex.Message}")
+            | ex -> return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: {ex.Message}")
 
         |_ -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
     }
@@ -281,11 +170,11 @@ let setPnlThreshold (context: HttpContext) =
         | Choice1Of2 thresholdStr ->
             match Decimal.TryParse(thresholdStr) with
             | true, threshold when threshold >= 0m ->
-                let! currentState = stateAgent.PostAndAsyncReply(GetCurrentState)
+                let! currentState = getTradingState ()
                 match currentState.TradingParams with
                 | Some tp ->
                     let newTp = { tp with PnLThreshold = Some threshold }
-                    let! _ = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(newTp, reply))
+                    let! _ = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters newTp)
                     let responseFunc = Successful.OK (sprintf "PnL Threshold set to %.2f\n" threshold)
                     return (responseFunc, ())
                 | None ->

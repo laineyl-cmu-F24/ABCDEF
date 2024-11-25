@@ -2,8 +2,6 @@ module Service.ApplicationService.Toggle
 open System
 open System.IO
 open Suave
-open Suave.Operators
-open Suave.Filters
 open MongoDB.Driver
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
