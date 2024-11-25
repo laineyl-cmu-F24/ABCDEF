@@ -1,4 +1,5 @@
 module Infrastructure.Repository.DatabaseInterface
+open System
 open MongoDB.Driver
 open MongoDB.Bson
 open Core.Model.Models
@@ -23,6 +24,8 @@ let lazyClient = lazy (
         raise ex
 )
 
+
+
 let db = lazyClient.Value.GetDatabase("product")
 let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 // let db = client.GetDatabase("product")
@@ -36,3 +39,38 @@ let createCurrencyPair (pairName: string) =
         Ok ()
     with
     | ex -> Error (DatabaseError ex.Message)
+    
+let orderCollection = db.GetCollection<Order>("orders")
+let saveOrder order =
+    try
+        let _ = orderCollection.InsertOne(order)
+        Ok ()
+    with
+    | ex -> Error (DatabaseError ex.Message)
+
+let transactionCollection = db.GetCollection<Transaction>("transactions")
+
+// Reusable Error Handling
+let tryDbOperation (operation: unit -> 'T) (args: 'Args) : DomainResult<'T> =
+    try
+        Ok (operation args)
+    with
+    | ex -> Error (DatabaseError ex.Message)
+
+let saveTransaction (transaction: Transaction) =
+    tryDbOperation (fun () -> transactionCollection.InsertOne(transaction))
+
+let getTransactions () =
+    tryDbOperation (fun () -> transactionCollection.Find(Builders<Transaction>.Filter.Empty).ToList())
+
+let getTransactionByOrderId (orderId: string) =
+    let filter = Builders<Transaction>.Filter.Eq((fun t -> t.OrderId), orderId)
+    tryDbOperation (fun () -> transactionCollection.Find(filter).ToList())
+
+let getTransactionWithinTime (startTime:DateTime) (endTime:DateTime) =
+    let filter =
+        Builders<Transaction>.Filter.And(
+            Builders<Transaction>.Filter.Gte((fun t -> t.Timestamp), startTime),
+            Builders<Transaction>.Filter.Lte((fun t -> t.Timestamp), endTime)
+        )
+    tryDbOperation (fun () -> transactionCollection.Find(filter).ToList()) ()

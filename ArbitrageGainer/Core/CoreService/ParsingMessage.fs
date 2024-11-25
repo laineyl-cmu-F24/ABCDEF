@@ -4,7 +4,14 @@ open System
 open System.Text.Json
 open Core.Model.Models
 
-let parseMessage(json: string) : ParseResult =
+let toExchange (exchangeId: string) =
+    match exchangeId with
+    | "Bitfinex" -> Bitfinex
+    | "Kraken" -> Kraken
+    | "Bitstamp" -> Bitstamp
+    | _ -> failwith $"Unknown exchange: {exchangeId}"
+
+let parseMessage(json: string) =
     try
         let messages = JsonSerializer.Deserialize<JsonElement[]>(json)
         match messages.Length > 0 with
@@ -19,25 +26,30 @@ let parseMessage(json: string) : ParseResult =
                     let pair = message.GetProperty("pair").GetString()
                     let bidPrice = message.GetProperty("bp").GetDecimal()
                     let askPrice = message.GetProperty("ap").GetDecimal()
+                    let askSize = message.GetProperty("as").GetDecimal()
+                    let bidSize = message.GetProperty("bs").GetDecimal()
                     let timestamp = message.GetProperty("t").GetInt64()
                     let quote = {
-                        Symbol =  pair
-                        Exchange = exchangeId.ToString()
+                        Symbol = pair
+                        Pair =  pair
+                        Exchange = toExchange (exchangeId.ToString())
                         BidPrice = bidPrice
+                        BidSize = bidSize 
                         AskPrice = askPrice
+                        AskSize = askSize 
                         Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).UtcDateTime
                     }
-                    QuoteReceived quote
+                    Ok (QuoteReceived quote)
                 |_ ->
-                    ParseError "Skipping quote from unsupported exchange"
+                    Error (ParseError "Skipping quote from unsupported exchange")
             |"status" ->
                 let status = message.GetProperty("status").GetString()
                 let statusMessage = message.GetProperty("message").GetString()
                 let statusMsg = { ev = "status"; status = status; message = statusMessage }
-                StatusReceived statusMsg
+                Ok (StatusReceived statusMsg)
             |_ ->
-                ParseError $"Unknown or unsupported event type: {ev}"
+                Error (ParseError $"Unknown or unsupported event type: {ev}")
         |false ->
-            ParseError "Empty message array"
+            Error (ParseError "Empty message array")
     with ex ->
-        ParseError ex.Message
+        Error (ParseError ex.Message)

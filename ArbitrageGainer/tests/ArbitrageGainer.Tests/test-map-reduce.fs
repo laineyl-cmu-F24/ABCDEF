@@ -1,6 +1,6 @@
 module ArbitrageGainer.Tests.Historical
 open NUnit.Framework
-open Historical
+open Service.ApplicationService.Historical
 
 [<Test>]
 let ``mapHistoricalData should group quotes by timestamp and currency pair`` () =
