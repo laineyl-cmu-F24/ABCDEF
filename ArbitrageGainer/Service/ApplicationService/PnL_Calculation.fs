@@ -38,6 +38,7 @@ let calculatePLofWithinTime (starting: DateTime) (ending: DateTime) =
         Ok totalPL
     | Error err -> Error err
 
+// manage the cumulative PnL
 let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
     let rec loop state =
         async {
