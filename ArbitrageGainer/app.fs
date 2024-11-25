@@ -87,6 +87,13 @@ let handleRequest func =
             let! response, _ = func context
             return! response context
         }
+        
+let handleToggleTrading func =
+    fun (context: HttpContext) ->
+        async {
+            let! response, _ = func ()
+            return! response context
+        }
 
 let setTradingParameters  (context: HttpContext) =
     async {
@@ -130,52 +137,52 @@ let getTradingParameters  (context: HttpContext) =
     }
     
 
-let toggleTrading (context: HttpContext) =
-    async {
-        let! currState = getTradingState ()
-        match currState.IsTradingActive with
-        | false ->
-            match currState.TradingParams with
-            | Some tradingParams ->
-                let tradeHistory = currState.TradeHistory
-                let crossTradedCryptos = Set.ofSeq findCurrencyPairs
-                let uri = Uri("wss://one8656-live-data.onrender.com/")
-                let apiKey = ""
-                let filteredCrypto = runTradingWorkflow tradingParams crossTradedCryptos tradeHistory
-                let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCrypto tradingParams
-                let! result = toggleRealTimeData true tradingParams crossTradedCryptos tradeHistory uri apiKey
-                match result with
-                | Ok closeFunc ->
-                    let! updatedState =
-                        stateAgent.PostAndAsyncReply(fun reply ->
-                            ToggleTrading(true, Some closeFunc, reply)
-                        )
-                    printfn "Trading started."
-                    let! _ = processArbitrageOpportunities (createCacheAgent()) tradingParams
-                    return (Successful.OK "Trading started\n", ())
-                | Error e ->
-                    printfn "Failed to start trading: %A" e
-                    return (RequestErrors.BAD_REQUEST (sprintf "Failed to start trading: %A" e), ())
-            | None ->
-                return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
-        | true ->
-            match currState.WebSocketClientCloseFunc with
-            | Some closeFunc ->
-                let! closeResult = closeFunc()
-                match closeResult with
-                | Ok () ->
-                    let! updatedState =
-                        stateAgent.PostAndAsyncReply(fun reply ->
-                            ToggleTrading(false, None, reply)
-                        )
-                    printfn "Trading stopped."
-                    return (Successful.OK "Trading stopped\n", ())
-                | Error e ->
-                    printfn "Error during close: %A" e
-                    return (RequestErrors.BAD_REQUEST "Failed to stop trading", ())
-            | None ->
-                return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
-    }
+// let toggleTrading (context: HttpContext) =
+//     async {
+//         let! currState = getTradingState ()
+//         match currState.IsTradingActive with
+//         | false ->
+//             match currState.TradingParams with
+//             | Some tradingParams ->
+//                 let tradeHistory = currState.TradeHistory
+//                 let crossTradedCryptos = Set.ofSeq findCurrencyPairs
+//                 let uri = Uri("wss://one8656-live-data.onrender.com/")
+//                 let apiKey = ""
+//                 let filteredCrypto = runTradingWorkflow tradingParams crossTradedCryptos tradeHistory
+//                 let closeFunc, clientAsync = WebSocketClient uri apiKey filteredCrypto tradingParams
+//                 let! result = toggleRealTimeData true tradingParams crossTradedCryptos tradeHistory uri apiKey
+//                 match result with
+//                 | Ok closeFunc ->
+//                     let! updatedState =
+//                         stateAgent.PostAndAsyncReply(fun reply ->
+//                             ToggleTrading(true, Some closeFunc, reply)
+//                         )
+//                     printfn "Trading started."
+//                     let! _ = processArbitrageOpportunities (createCacheAgent()) tradingParams
+//                     return (Successful.OK "Trading started\n", ())
+//                 | Error e ->
+//                     printfn "Failed to start trading: %A" e
+//                     return (RequestErrors.BAD_REQUEST (sprintf "Failed to start trading: %A" e), ())
+//             | None ->
+//                 return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
+//         | true ->
+//             match currState.WebSocketClientCloseFunc with
+//             | Some closeFunc ->
+//                 let! closeResult = closeFunc()
+//                 match closeResult with
+//                 | Ok () ->
+//                     let! updatedState =
+//                         stateAgent.PostAndAsyncReply(fun reply ->
+//                             ToggleTrading(false, None, reply)
+//                         )
+//                     printfn "Trading stopped."
+//                     return (Successful.OK "Trading stopped\n", ())
+//                 | Error e ->
+//                     printfn "Error during close: %A" e
+//                     return (RequestErrors.BAD_REQUEST "Failed to stop trading", ())
+//             | None ->
+//                 return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
+//     }
 
     
 let getHistoricalArbitrage (context: HttpContext) =
@@ -234,7 +241,7 @@ let app =
     choose [
         POST >=> path "/api/strategy" >=> handleRequest setTradingParameters
         GET >=> path "/api/strategy" >=> handleRequest getTradingParameters
-        POST >=> path "/api/trading" >=> handleRequest toggleTrading
+        POST >=> path "/api/trading" >=> handleToggleTrading toggleTrading
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
         GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
