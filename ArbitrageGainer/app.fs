@@ -274,7 +274,7 @@ let getHistoricalPnL (context: HttpContext) =
             return (responseFunc, ())
     }
 
-let setPnlThreshold (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+let setPnlThreshold (context: HttpContext) =
     async {
         let req = context.request
         match req.formData "threshold" with

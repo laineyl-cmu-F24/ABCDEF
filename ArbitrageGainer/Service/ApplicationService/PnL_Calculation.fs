@@ -56,7 +56,9 @@ let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
                 match state.PnLThreshold with
                 | Some threshold when newTotalPnL >= threshold ->
                     match state.Email with
-                    | Some email -> sendEmail email "Threshold Reached" (sprintf "Your PnL has reached %.2f." newTotalPnL)
+                    | Some email ->
+                        printf "send email"
+                        // sendEmail email "Threshold Reached" (sprintf "Your PnL has reached %.2f." newTotalPnL)
                     | _ -> ()
                     let! toggleResult = toggleTrading ()
                     return! loop initialPnLState
