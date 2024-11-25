@@ -22,6 +22,8 @@
       <Compile Include="Service\ApplicationService\MarketData.fs" />
       <Compile Include="Service\ApplicationService\Metric.fs" />
       <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
+      <Compile Include="Service\ApplicationService\TradingState.fs" />
+      <Compile Include="Service\ApplicationService\ToggleTrading.fs" />
       <Compile Include="Service\ApplicationService\PnL_Calculation.fs" />
       <Compile Include="app.fs" />
       <Content Include="README.md" />

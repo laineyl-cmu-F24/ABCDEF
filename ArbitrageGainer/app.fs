@@ -12,12 +12,12 @@ open Service.ApplicationService.CrossTradedCurrencyPair
 open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
 open Service.ApplicationService.PnL
+open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
 open  Service.ApplicationService.TradingAgent
 open Service.ApplicationService.Cache
-
-
+open Service.ApplicationService.Toggle
 
 type SystemState = {
     TradingParams: TradingParameters option
@@ -82,7 +82,7 @@ let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
 let handleRequest func =
     fun (context: HttpContext) ->
         async {
-            let! response, _ = func stateAgent context
+            let! response, _ = func context
             return! response context
         }
 
@@ -93,11 +93,11 @@ let handleSimpleRequest func =
             let! response, _ = func context
             return! response context
         }
-
-
-let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+        
+let setTradingParameters  (context: HttpContext) =
     async {
         let req = context.request
+        let! initialState = getTradingParameters ()
         match req.formData "NumOfCrypto", req.formData "MinSpreadPrice", req.formData "MinTransactionProfit",
               req.formData "MaxTransactionValue", req.formData "MaxTradeValue", req.formData "InitialInvestmentAmount", 
               req.formData "Email", req.formData "PnLThreshold" with
@@ -117,16 +117,17 @@ let setTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
                                    | null | "" -> None
                                    | _ -> Some (decimal pnlThreshold)
                 }
-            let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> SetTradingParameters(parameters, reply))
+            setTradingParameters parameters
+            let! updatedState = getTradingParameters ()
             // printfn $"Updated State: %A{updatedState}"
             return (Successful.OK "Trading parameters updated successfully\n", updatedState)
         | _ -> return (RequestErrors.BAD_REQUEST "Invalid parameters provided\n", initialState)
     }
     
-let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+let getTradingParameters  (context: HttpContext) =
     async {
-        let! currentState = stateAgent.PostAndAsyncReply(GetCurrentState) 
-        match currentState.TradingParams with
+        let! currentParam = getTradingParameters ()
+        match currentParam with
         | Some tradingParams ->
             let json = System.Text.Json.JsonSerializer.Serialize(tradingParams)
             return (Successful.OK json, ())
@@ -134,20 +135,16 @@ let getTradingParameters (stateAgent: MailboxProcessor<AgentMessage>) (context: 
             return (RequestErrors.NOT_FOUND "Error when getting trading parameters\n", ())
     }
     
-let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext)  =
+
+let toggleTrading (context: HttpContext) =
     async {
-        let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
-        match currTradingState.IsTradingActive with
+        let! currState = getTradingState ()
+        match currState.IsTradingActive with
         | false ->
-            match currTradingState.TradingParams with
-            |Some tradingParams ->
-                let tradingParams = tradingParams
-                let tradeHistory = currTradingState.TradeHistory
-                //need to be change with actual
+            match currState.TradingParams with
+            | Some tradingParams ->
+                let tradeHistory = currState.TradeHistory
                 let crossTradedCryptos = Set.ofSeq findCurrencyPairs
-                // let crossTradedCryptos = Set.ofSeq ["MKR-USD"; "USD-BTC"; "SOL-USD"; "DOT-USD"]
-                //let uri = Uri("wss://socket.polygon.io/crypto")
-                //let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
                 let uri = Uri("wss://one8656-live-data.onrender.com/")
                 let apiKey = ""
                 let filteredCrypto = runTradingWorkflow tradingParams crossTradedCryptos tradeHistory
@@ -155,9 +152,12 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
                 let! result = toggleRealTimeData true tradingParams crossTradedCryptos tradeHistory uri apiKey
                 match result with
                 | Ok closeFunc ->
-                    let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(true, Some closeFunc, reply))
+                    let! updatedState =
+                        stateAgent.PostAndAsyncReply(fun reply ->
+                            ToggleTrading(true, Some closeFunc, reply)
+                        )
                     printfn "Trading started."
-                    let! trade = processArbitrageOpportunities (createCacheAgent()) tradingParams
+                    let! _ = processArbitrageOpportunities (createCacheAgent()) tradingParams
                     return (Successful.OK "Trading started\n", ())
                 | Error e ->
                     printfn "Failed to start trading: %A" e
@@ -165,12 +165,15 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
             | None ->
                 return (RequestErrors.BAD_REQUEST "Trading parameters are not set", ())
         | true ->
-            match currTradingState.WebSocketClientCloseFunc with
+            match currState.WebSocketClientCloseFunc with
             | Some closeFunc ->
                 let! closeResult = closeFunc()
                 match closeResult with
                 | Ok () ->
-                    let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> ToggleTrading(false, None, reply))
+                    let! updatedState =
+                        stateAgent.PostAndAsyncReply(fun reply ->
+                            ToggleTrading(false, None, reply)
+                        )
                     printfn "Trading stopped."
                     return (Successful.OK "Trading stopped\n", ())
                 | Error e ->
@@ -179,8 +182,9 @@ let toggleTrading (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpCon
             | None ->
                 return (RequestErrors.BAD_REQUEST "No active trading session to stop", ())
     }
+
     
-let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+let getHistoricalArbitrage (context: HttpContext) =
     async {
         let req = context.request
         match req.formData "file" with
@@ -196,7 +200,8 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
                             { Pair =  pair; OpportunityCount = opportunityCount }
                         )
                         |> Seq.toList
-                    let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply)) 
+                    let history = SetTradeHistory (tradeRecords)
+                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply)) 
                     return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
                 with
                 | ex ->
@@ -205,7 +210,7 @@ let getHistoricalArbitrage (stateAgent: MailboxProcessor<AgentMessage>) (context
         | _ -> return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
     }
     
-let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+let getCrossTradeCurrencyPairs (context: HttpContext) =
     async {
         try
             let currencyPair = findCurrencyPairs
@@ -215,9 +220,9 @@ let getCrossTradeCurrencyPairs (stateAgent: MailboxProcessor<AgentMessage>) (con
             return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: %s{ex.Message}")
     }
     
-let getAnnualReturn (stateAgent: MailboxProcessor<AgentMessage>) (context: HttpContext) =
+let getAnnualReturn (context: HttpContext) =
     async {
-        let! currTradingState = stateAgent.PostAndAsyncReply(GetCurrentState)
+        let! currTradingState = getTradingState ()
         match currTradingState.TradingParams, currTradingState.StartTradingTime with
         | Some tradingParams, startTimeOpt ->
             try
