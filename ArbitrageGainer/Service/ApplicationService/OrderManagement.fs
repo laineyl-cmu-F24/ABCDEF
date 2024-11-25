@@ -11,6 +11,7 @@ open Infrastructure.Client.ModuleAPI
 // TODO: wait to be called by data feed
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
         match orderStatus.Status with
+         // TODO: add PNL here !!
         | "FullyFilled" ->
             let transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
