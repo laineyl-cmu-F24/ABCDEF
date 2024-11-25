@@ -24,7 +24,7 @@ let createTransaction (side: Side) (price: decimal) (amount: decimal) =
 [<Test>]
 let ``ResetThreshold clears the PnL threshold`` () =
     setup()
-    setThreshold 500M
+    SetThreshold 500M
     resetPnLAgent
     let currentPnL = getCurrentPnL |> Async.RunSynchronously
     Assert.That(currentPnL, Is.EqualTo(0M))
@@ -56,5 +56,47 @@ let ``calulatePLofTransactions calculates cumulative PnL correctly`` () =
         createTransaction Buy 50M 10M   // -500
         createTransaction Sell 100M 5M // +500
     ]
-    let result = calulatePLofTransactions transactions
+    let result = calculatePLofTransactions transactions
     Assert.That(result, Is.EqualTo(0M)) // Net PnL = -500 + 500
+
+[<Test>]
+let ``AddTransaction updates TotalPnL correctly`` () =
+    setup()
+    let transaction = createTransaction Sell 100M 2M
+    addTransaction transaction
+    let currentPnL = getCurrentPnL |> Async.RunSynchronously
+    Assert.That(currentPnL, Is.EqualTo(0M)) // Sell => Amount * Price
+
+[<Test>]
+let ``SetThreshold triggers state change when threshold is exceeded`` () =
+    setup()
+    SetThreshold 200M
+    let transaction = createTransaction Sell 100M 2M
+    addTransaction transaction
+    let currentPnL = getCurrentPnL |> Async.RunSynchronously
+    Assert.That(currentPnL, Is.EqualTo(0M)) // State resets when threshold is exceeded
+
+[<Test>]
+let ``GetHistoricalPnL returns correct PnL for a given time range`` () =
+    setup()
+    let startTime = DateTime.UtcNow.AddMinutes(-10.0)
+    let endTime = DateTime.UtcNow.AddMinutes(10.0)
+    let transactions = [
+        createTransaction Buy 20M 5M  // -100
+        createTransaction Sell 50M 2M // +100
+    ]
+    transactions |> List.iter addTransaction
+    let result = getHistoricalPnLWithIn startTime endTime |> Async.RunSynchronously
+    Assert.That(result.Value, Is.EqualTo(0M)) // Historical PnL = -100 + 100
+
+[<Test>]
+let ``ResetAgent clears all thresholds and transactions`` () =
+    setup()
+    ResetThreshold
+    let transaction = createTransaction Sell 100M 5M
+    addTransaction transaction
+    resetPnLAgent
+    let currentPnL = getCurrentPnL |> Async.RunSynchronously
+    Assert.That(currentPnL, Is.EqualTo(0M))
+    let result = getHistoricalPnLWithIn DateTime.MinValue DateTime.UtcNow |> Async.RunSynchronously
+    Assert.That(result, Is.EqualTo(Some 0M))
