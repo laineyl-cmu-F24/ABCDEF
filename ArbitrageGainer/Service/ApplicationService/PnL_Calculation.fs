@@ -51,9 +51,8 @@ let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
                     match state.Email with
                     | Some email -> sendEmail email "Threshold Reached" (sprintf "Your PnL has reached %.2f." newTotalPnL)
                     | _ -> ()
-                    return! loop { state with TotalPnL = newTotalPnL; PnLThreshold = None }
-                    //TODO: stop trading here !!!
-                    toggleTrading ()
+                    let! toggleResult = toggleTrading ()
+                    return! loop initialPnLState
                 | _ -> return! loop {state with TotalPnL = newTotalPnL}
                
             | SetThreshold threshold ->
