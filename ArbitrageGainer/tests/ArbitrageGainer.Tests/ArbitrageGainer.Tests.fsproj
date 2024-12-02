@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="test-metric.fs"/>
     <Compile Include="test-map-reduce.fs"/>
+    <Compile Include="test-pnl-calculation.fs" />
   </ItemGroup>
 
   <ItemGroup>
