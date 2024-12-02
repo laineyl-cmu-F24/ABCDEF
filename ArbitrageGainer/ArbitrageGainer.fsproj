@@ -14,6 +14,7 @@
       <Compile Include="Service\ApplicationService\Cache.fs" />
       <Compile Include="Service\ApplicationService\Workflow.fs" />
       <Compile Include="Infrastructure\Client\WebSocketClient.fs" />
+      <Compile Include="Infrastructure\Client\EmailClient.fs" />
       <Compile Include="Service\ApplicationService\Historical_Calculation.fs" />
       <Compile Include="Service\ApplicationService\MarketData.fs" />
       <Compile Include="Service\ApplicationService\metric.fs" />
