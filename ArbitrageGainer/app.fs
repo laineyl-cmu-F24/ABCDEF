@@ -37,44 +37,44 @@ let initialState = {
     WebSocketClientCloseFunc =  None
     StartTradingTime = None
 }
-
-let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
-    let rec loop state =
-        async {
-            let! message = inbox.Receive()
-            match message with
-            | SetTradingParameters (p, reply) ->
-                // printfn $"Current State: %A{state}"
-                let updatedState = { state with TradingParams = Some p }
-                reply.Reply(updatedState)
-                return! loop updatedState
-            | GetCurrentState reply ->
-                reply.Reply(state)
-                return! loop state
-            | GetTradeHistory (newTrades, reply) ->
-                let updatedState = { state with TradeHistory = newTrades }
-                reply.Reply(updatedState)
-                return! loop updatedState
-            | ToggleTrading (isActive, closeFuncOpt, reply) ->
-                let updatedState =
-                    match isActive with
-                    | true -> {
-                            state with
-                                IsTradingActive = isActive
-                                WebSocketClientCloseFunc =  closeFuncOpt
-                                StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
-                                }
-                    | false -> {
-                            state with
-                                 IsTradingActive = false
-                                 WebSocketClientCloseFunc = None
-                                 StartTradingTime = None // Clear start time
-                                 }
-                reply.Reply(updatedState)
-                return! loop updatedState
-        }
-    loop initialState
-)
+//
+// let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
+//     let rec loop state =
+//         async {
+//             let! message = inbox.Receive()
+//             match message with
+//             | SetTradingParameters (p, reply) ->
+//                 // printfn $"Current State: %A{state}"
+//                 let updatedState = { state with TradingParams = Some p }
+//                 reply.Reply(updatedState)
+//                 return! loop updatedState
+//             | GetCurrentState reply ->
+//                 reply.Reply(state)
+//                 return! loop state
+//             | GetTradeHistory (newTrades, reply) ->
+//                 let updatedState = { state with TradeHistory = newTrades }
+//                 reply.Reply(updatedState)
+//                 return! loop updatedState
+//             | ToggleTrading (isActive, closeFuncOpt, reply) ->
+//                 let updatedState =
+//                     match isActive with
+//                     | true -> {
+//                             state with
+//                                 IsTradingActive = isActive
+//                                 WebSocketClientCloseFunc =  closeFuncOpt
+//                                 StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
+//                                 }
+//                     | false -> {
+//                             state with
+//                                  IsTradingActive = false
+//                                  WebSocketClientCloseFunc = None
+//                                  StartTradingTime = None // Clear start time
+//                                  }
+//                 reply.Reply(updatedState)
+//                 return! loop updatedState
+//         }
+//     loop initialState
+// )
 
 let handleRequest func =
     fun (context: HttpContext) ->
@@ -194,4 +194,9 @@ let app =
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
     ]
 
+
 startWebServer defaultConfig app
+
+
+
+
