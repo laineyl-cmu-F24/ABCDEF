@@ -86,11 +86,12 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let totalTransactionValue = buyTotal + sellTotal
 
     let adjustedAmount =
-        if totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE then
+        match totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE with
+        | true ->
             // Adjust the amount to fit within the max total transaction value
             let allowedAmount = MAX_TOTAL_TRANSACTION_VALUE / (buyPrice + sellPrice)
             Math.Floor(allowedAmount * 10000m) / 10000m // Round down to 4 decimal places
-        else
+        | _ ->
             desiredAmount
 
     // Ensure final amount respects available amounts on both exchanges

@@ -184,7 +184,10 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
     let remainingAmount = order.Amount - fulfilledAmount
-    let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+    let status =
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ ->"PartiallyFilled"
 
     let orderStatus = {
         OrderId = order.OrderId
@@ -235,7 +238,10 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
     let remainingAmount = order.Amount - fulfilledAmount
-    let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+    let status =
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ -> "PartiallyFilled"
 
     let orderStatus = {
         OrderId = order.OrderId
@@ -291,9 +297,11 @@ let retrieveBitstampOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let remainingAmount = statusResponse.amount - fulfilledAmount
     let status =
-        if remainingAmount = 0m then "FullyFilled"
-        elif fulfilledAmount > 0m then "PartiallyFilled"
-        else "Unfilled"
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ -> match fulfilledAmount > 0m with
+                | true ->  "PartiallyFilled"
+                | _ -> "Unfilled"
 
     let orderStatus = {
         OrderId = order.OrderId
