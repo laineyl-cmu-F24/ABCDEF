@@ -59,6 +59,7 @@
         <Content Include="obj\rider.project.restore.info" />
         <Content Include="obj\ArbitrageGainer.fsproj.nuget.g.props" />
         <Content Include="obj\ArbitrageGainer.fsproj.nuget.dgspec.json" />
+        <Content Include="historicalData.txt" />
     </ItemGroup>
 
 </Project>
