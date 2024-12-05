@@ -74,3 +74,8 @@ let getTransactionWithinTime (startTime:DateTime) (endTime:DateTime) =
             Builders<Transaction>.Filter.Lte((fun t -> t.Timestamp), endTime)
         )
     tryDbOperation (fun () -> transactionCollection.Find(filter).ToList()) ()
+    
+let historicalArbitrageOpportunity = db.GetCollection<HistoricalArbitrageOpportunity>("historicalArbitrageOpportunities")
+
+let saveHistoricalArbitrageOpportunity (opportunity: HistoricalArbitrageOpportunity) =
+    historicalArbitrageOpportunity.InsertOne(opportunity)

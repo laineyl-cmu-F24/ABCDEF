@@ -1,6 +1,8 @@
 ﻿module Service.ApplicationService.Historical
 open FSharp.Data
 open System.IO
+open Core.Model.Models
+open Infrastructure.Repository.DatabaseInterface
 
 type HistoricalData =
     JsonProvider<
@@ -82,5 +84,11 @@ let calculateHistoricalArbitrage file=
     let mapResult = mapHistoricalData data
     let reduceResult = reduceHistoricalData mapResult
     
-    reduceResult |> Seq.iter(fun (pair, opportunities) -> printfn $"{pair}, {opportunities} opportunities")
+    reduceResult |> Seq.iter(fun (pair, opportunities) ->
+        printfn $"{pair}, {opportunities} opportunities"
+        
+        let opportunity = { Pair = pair; Opportunity = opportunities }
+        saveHistoricalArbitrageOpportunity opportunity
+        
+    )
     reduceResult

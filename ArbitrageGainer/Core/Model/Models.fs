@@ -89,6 +89,11 @@ type TradingParameters = {
     Email: string option
     PnLThreshold: decimal option
 }
+
+type HistoricalArbitrageOpportunity = {
+    Pair: string
+    Opportunity: int
+}
     
 type Side = Buy | Sell
 

@@ -36,12 +36,12 @@ let tradingParams: TradingParameters option = Some {
     MaxTransactionValue = 2000.0M
     MaxTradeValue = 5000.0M
     InitialInvestmentAmount = 0.0M 
-    Email = None
+    Email = Some "pkotchav@andrew.cmu.edu"
     PnLThreshold = None
 }
 
 let initialState = {
-    TradingParams = None
+    TradingParams = tradingParams
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc = None
