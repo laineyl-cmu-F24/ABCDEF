@@ -12,7 +12,6 @@ open  Service.ApplicationService.TradingAgent
 open Service.ApplicationService.TradingState
 open Service.ApplicationService.Cache
 
-
 let toggleTrading () =
     async {
         let! currTradingState = getTradingState ()

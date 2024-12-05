@@ -14,7 +14,6 @@ open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Service.ApplicationService.Toggle
 
-
 type SystemState = {
     TradingParams: TradingParameters option
     IsTradingActive: bool
@@ -29,52 +28,24 @@ type AgentMessage =
     | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
     | ToggleTrading of bool * Option<unit -> Async<DomainResult<unit>>> * AsyncReplyChannel<SystemState>
     
+let tradingParams: TradingParameters option = Some {
+    NumOfCrypto = 5
+    MinSpreadPrice = 0.05M
+    MinTransactionProfit = 5.0M
+    MaxTransactionValue = 2000.0M
+    MaxTradeValue = 5000.0M
+    InitialInvestmentAmount = 0.0M 
+    Email = None
+    PnLThreshold = None
+}
     
 let initialState = {
-    TradingParams = None
+    TradingParams = tradingParams
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc =  None
     StartTradingTime = None
 }
-//
-// let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
-//     let rec loop state =
-//         async {
-//             let! message = inbox.Receive()
-//             match message with
-//             | SetTradingParameters (p, reply) ->
-//                 // printfn $"Current State: %A{state}"
-//                 let updatedState = { state with TradingParams = Some p }
-//                 reply.Reply(updatedState)
-//                 return! loop updatedState
-//             | GetCurrentState reply ->
-//                 reply.Reply(state)
-//                 return! loop state
-//             | GetTradeHistory (newTrades, reply) ->
-//                 let updatedState = { state with TradeHistory = newTrades }
-//                 reply.Reply(updatedState)
-//                 return! loop updatedState
-//             | ToggleTrading (isActive, closeFuncOpt, reply) ->
-//                 let updatedState =
-//                     match isActive with
-//                     | true -> {
-//                             state with
-//                                 IsTradingActive = isActive
-//                                 WebSocketClientCloseFunc =  closeFuncOpt
-//                                 StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
-//                                 }
-//                     | false -> {
-//                             state with
-//                                  IsTradingActive = false
-//                                  WebSocketClientCloseFunc = None
-//                                  StartTradingTime = None // Clear start time
-//                                  }
-//                 reply.Reply(updatedState)
-//                 return! loop updatedState
-//         }
-//     loop initialState
-// )
 
 let handleRequest func =
     fun (context: HttpContext) ->
@@ -149,7 +120,8 @@ let getHistoricalArbitrage (context: HttpContext) =
                         )
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)
-                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply)) 
+                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
+                    printfn $"Got historical arbitrage %A{result}"
                     return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
                 with
                 | ex ->
