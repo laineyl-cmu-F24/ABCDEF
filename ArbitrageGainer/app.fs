@@ -13,6 +13,7 @@ open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Service.ApplicationService.Toggle
+open Logging.Logger
 
 
 type SystemState = {
@@ -37,44 +38,6 @@ let initialState = {
     WebSocketClientCloseFunc =  None
     StartTradingTime = None
 }
-//
-// let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
-//     let rec loop state =
-//         async {
-//             let! message = inbox.Receive()
-//             match message with
-//             | SetTradingParameters (p, reply) ->
-//                 // printfn $"Current State: %A{state}"
-//                 let updatedState = { state with TradingParams = Some p }
-//                 reply.Reply(updatedState)
-//                 return! loop updatedState
-//             | GetCurrentState reply ->
-//                 reply.Reply(state)
-//                 return! loop state
-//             | GetTradeHistory (newTrades, reply) ->
-//                 let updatedState = { state with TradeHistory = newTrades }
-//                 reply.Reply(updatedState)
-//                 return! loop updatedState
-//             | ToggleTrading (isActive, closeFuncOpt, reply) ->
-//                 let updatedState =
-//                     match isActive with
-//                     | true -> {
-//                             state with
-//                                 IsTradingActive = isActive
-//                                 WebSocketClientCloseFunc =  closeFuncOpt
-//                                 StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
-//                                 }
-//                     | false -> {
-//                             state with
-//                                  IsTradingActive = false
-//                                  WebSocketClientCloseFunc = None
-//                                  StartTradingTime = None // Clear start time
-//                                  }
-//                 reply.Reply(updatedState)
-//                 return! loop updatedState
-//         }
-//     loop initialState
-// )
 
 let handleRequest func =
     fun (context: HttpContext) ->
@@ -134,6 +97,9 @@ let getTradingParameters  (context: HttpContext) =
     
 let getHistoricalArbitrage (context: HttpContext) =
     async {
+        let logger = createLogger "historicalArbitrageLog.txt"
+        logger "Historical Arbitrage Analysis: Start"
+        let startTimestamp = DateTime.UtcNow
         let req = context.request
         match req.formData "file" with
         | Choice1Of2 filePath ->
@@ -149,13 +115,23 @@ let getHistoricalArbitrage (context: HttpContext) =
                         )
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)
-                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply)) 
+                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
+                    let endTimestamp = DateTime.UtcNow
+                    logger $"Historical Arbitrage Analysis: End - Time Taken: {endTimestamp - startTimestamp}"
                     return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
                 with
                 | ex ->
+                    let endTimestamp = DateTime.UtcNow
+                    logger $"Historical Arbitrage Analysis: End - Invalid Input - Time Taken: {endTimestamp - startTimestamp}"
                     return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
-            | _ -> return (RequestErrors.NOT_FOUND "Error\n", "File not found")
-        | _ -> return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
+            | _ ->
+                let endTimestamp = DateTime.UtcNow
+                logger $"Historical Arbitrage Analysis: End - URL Not Found - Time Taken: {endTimestamp - startTimestamp}"
+                return (RequestErrors.NOT_FOUND "Error\n", "File not found")
+        | _ ->
+            let endTimestamp = DateTime.UtcNow
+            logger $"Historical Arbitrage Analysis: End - Bad Request - Time Taken: {endTimestamp - startTimestamp}"
+            return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
     }
     
 let getCrossTradeCurrencyPairs (context: HttpContext) =

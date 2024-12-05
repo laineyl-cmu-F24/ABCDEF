@@ -38,14 +38,3 @@ let findCurrencyPairs =
     | Error _ ->
         printfn "Cross-currency pair processing error"
         Seq.empty
-
-
-
-
-    
-    
-    
-
-
-
-
