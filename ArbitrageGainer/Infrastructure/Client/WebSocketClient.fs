@@ -51,6 +51,7 @@ let WebSocketClient uri apiKey symbols tradingParams =
                 match result.MessageType with
                 | WebSocketMessageType.Text ->
                     let message = Encoding.UTF8.GetString(buffer, 0, result.Count)
+                    //printfn "Real Time Market Data Message: %s" message
                     return Ok message
                 | WebSocketMessageType.Close ->
                     // Handle WebSocket closure
@@ -117,7 +118,8 @@ let WebSocketClient uri apiKey symbols tradingParams =
                                             return! receiveLoop()
                                         | Ok (StatusReceived statusMsg) ->
                                             return! receiveLoop()
-                                        | Error (ParseError err) -> return! receiveLoop()
+                                        | Error (ParseError err) ->
+                                            return! receiveLoop()
                                 }
                             let! receiveResult = receiveLoop()
                             return receiveResult        
