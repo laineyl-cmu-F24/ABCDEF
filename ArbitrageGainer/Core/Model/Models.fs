@@ -172,8 +172,13 @@ type KrakenSubmitOrderRequest = {
     price: decimal
 }
 
-type KrakenSubmitOrderResponse = {
+type KrakenSubmitOrderResult = {
     txid: string list
+}
+
+type KrakenSubmitOrderResponse = {
+    error: string list
+    result: KrakenSubmitOrderResult
 }
 
 type KrakenRetrieveOrderTradesResponse = {

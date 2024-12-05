@@ -207,7 +207,7 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 }
 
 let submitKrakenOrder (order: Order) : Task<Order> = task {
-    //let requestBody = {
+    //let requestBody = 
         //pair = order.Symbol
         //``type`` = match order.Side with | Buy -> "buy" | Sell -> "sell"
         //ordertype = "market"
@@ -225,8 +225,9 @@ let submitKrakenOrder (order: Order) : Task<Order> = task {
     let! responseBody = response.Content.ReadAsStringAsync()
     printfn $"Kraken Response body: %s{responseBody}"
     let submitResponse = JsonConvert.DeserializeObject<KrakenSubmitOrderResponse>(responseBody)
+    printfn $"Kraken Deserilized Response body: %s{responseBody}"
 
-    let orderId = List.head submitResponse.txid
+    let orderId = List.head submitResponse.result.txid
     let updatedOrder = { order with OrderId = orderId }
     let result = saveOrder updatedOrder
     printfn $"Submitted Kraken order: %A{updatedOrder}"
