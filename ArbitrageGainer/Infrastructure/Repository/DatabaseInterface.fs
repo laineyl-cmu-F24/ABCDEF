@@ -38,6 +38,17 @@ let createCurrencyPair (pairName: string) =
         Ok ()
     with
     | ex -> Error (DatabaseError ex.Message)
+
+let getCurrencyPair() =
+    let currencyPairs = 
+        currencyPairsCollection.Find(FilterDefinition<CurrencyPair>.Empty)
+        |> fun cursor -> cursor.ToList()
+
+    let names = 
+        currencyPairs 
+        |> Seq.map (fun cp -> cp.name) 
+        |> Set.ofSeq
+    names
     
 let orderCollection = db.GetCollection<Order>("orders")
 let saveOrder order =
@@ -88,3 +99,6 @@ let getHistoricalOpportunity () =
         .Find(Builders<TradeRecord>.Filter.Empty)
         .ToList()
     |> Seq.toList
+
+
+    

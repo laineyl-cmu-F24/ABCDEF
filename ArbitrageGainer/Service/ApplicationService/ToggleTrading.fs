@@ -30,15 +30,7 @@ let toggleTrading () =
                 let crossTradedCryptos = Set.ofSeq findCurrencyPairs
                 //need to be change with actual
                 let tradeHistory = getHistoricalOpportunity()
-                // let tradeHistory = [
-                //     { Pair = "DOT-USD"; OpportunityCount = 2 }
-                //     { Pair = "MKR-USD"; OpportunityCount = 34 }
-                //     { Pair = "FET-USD"; OpportunityCount = 5 }
-                //     { Pair = "SOL-USD"; OpportunityCount = 3 }
-                //     ]
-                //let crossTradedCryptos = Set.ofSeq findCurrencyPairs
-                //need to be change with actual
-                let crossTradedCryptos = Set.ofSeq ["MKR-USD"; "FET-USD"; "SOL-USD"; "DOT-USD"]
+                let crossTradedCryptos = getCurrencyPair()
                 //let uri = Uri("wss://socket.polygon.io/crypto")
                 //let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
                 let uri = Uri("wss://one8656-live-data.onrender.com/")

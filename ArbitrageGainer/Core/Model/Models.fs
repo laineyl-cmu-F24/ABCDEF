@@ -178,6 +178,7 @@ type KrakenSubmitOrderRequest = {
     ordertype: string
     volume: decimal
     price: decimal
+    nonce: int
 }
 
 type KrakenSubmitOrderResult = {
@@ -189,15 +190,13 @@ type KrakenSubmitOrderResponse = {
     result: KrakenSubmitOrderResult
 }
 
+type KrakenRetrieveOrderTradesResult = {
+    vol_exec: string 
+}
+
 type KrakenRetrieveOrderTradesResponse = {
-    id: string
-    symbol: string
-    exchange: string
-    price: decimal
-    amount: decimal
-    timestamp: string
-    side: string
-    ``type``: string
+    error: string list
+    result: Map<string, KrakenRetrieveOrderTradesResult>
 }
 
 type BitstampEmitOrderRequest = {
