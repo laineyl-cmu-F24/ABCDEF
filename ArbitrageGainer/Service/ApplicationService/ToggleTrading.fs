@@ -11,8 +11,8 @@ open Service.ApplicationService.MarketData
 open Service.ApplicationService.TradingAgent
 open Service.ApplicationService.TradingState
 open Service.ApplicationService.Cache
-open Logging.Logger
 open Infrastructure.Repository.DatabaseInterface
+open Logging.Logger
 
 let toggleTrading () =
     async {

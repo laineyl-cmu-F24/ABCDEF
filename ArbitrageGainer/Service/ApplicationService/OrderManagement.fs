@@ -62,13 +62,13 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             let! submittedOrder =
                 match order.Exchange with
                 | Bitfinex ->
-                    createLogger "Order Emitted - Bitfinex"
+                    createLogger "New Order Emitted to Bitfinex"
                     submitBitfinexOrder newOrder
                 | Kraken ->
-                    createLogger "Order Emitted - Kraken"
+                    createLogger "New Order Emitted to Kraken"
                     submitKrakenOrder newOrder
                 | Bitstamp ->
-                    createLogger "Order Emitted - Bitstamp"
+                    createLogger "New Order Emitted to Bitstamp"
                     emitBitstampOrder newOrder
                     
             return ()
@@ -140,14 +140,14 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let! submittedBuyOrder =
         match buyOrder.Exchange with
         | Bitfinex ->
+            createLogger "Buy Order Submitted to Bitfinex"
             submitBitfinexOrder buyOrder
         | Kraken ->
+            createLogger "Buy Order Submitted to Kraken"
             submitKrakenOrder buyOrder
         | Bitstamp ->
+            createLogger "Buy Order Submitted to Bitstamp"
             emitBitstampOrder buyOrder
-        | _ ->
-            printfn $"Unexpected exchange: %A{buyOrder.Exchange}"
-            raise (Exception "Unknown exchange")
 
     printfn $"Submitted Buy Order: %A{submittedBuyOrder}"
 
@@ -155,10 +155,13 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let! submittedSellOrder =
         match sellOrder.Exchange with
         | Bitfinex ->
+            createLogger "Sell Order Submitted to Bitfinex"
             submitBitfinexOrder sellOrder
         | Kraken ->
+            createLogger "Sell Order Submitted to Kraken"
             submitKrakenOrder sellOrder
         | Bitstamp ->
+            createLogger "Sell Order Submitted to Bitstamp"
             emitBitstampOrder sellOrder
 
     printfn $"Submitted Sell Order: %A{submittedSellOrder}"
