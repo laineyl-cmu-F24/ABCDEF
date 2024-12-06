@@ -197,7 +197,7 @@ let app =
     ]
 
 
-startWebServer defaultConfig app
+startWebServer { defaultConfig with bindings = [ HttpBinding.createSimple HTTP "0.0.0.0" 8080  ] } app
 
 
 
