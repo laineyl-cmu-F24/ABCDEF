@@ -16,7 +16,7 @@ let initialPnLState = {
     TotalPnL = 0M
     // PnLThreshold = None
     Email = None
-    Toggle = false
+    Toggle = true
 }
 
 type PnLMessage =
@@ -61,9 +61,12 @@ let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
                 match state.Toggle with
                 | true -> 
                     let pl = calculatePLofTransaction transaction
+                    // printfn $"calculatedPL %A{pl}"
                     let newTotalPnL = state.TotalPnL + pl
                     return! loop {state with TotalPnL = newTotalPnL}
-                | _ -> return! loop state
+                | _ ->
+                    printfn "PnL calculation is toggled off."
+                    return! loop state
                
             // | SetThreshold threshold ->
             //     let newThreshold =
@@ -73,6 +76,7 @@ let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
             //     return! loop{state with PnLThreshold = newThreshold }
             
             | GetCurrentPnL reply ->
+                // printfn $"GETTTTT %A{state.TotalPnL}"
                 reply.Reply(state.TotalPnL)
                 return! loop state
                 
@@ -95,7 +99,7 @@ let addTransaction (transaction: Transaction) =
     PnLAgent.Post(AddTransaction transaction)
 
 // Get Current P&L
-let getCurrentPnL =
+let getCurrentPnL ()=
     PnLAgent.PostAndAsyncReply(GetCurrentPnL)
 
 // Get Historical P&L within a specified time frame

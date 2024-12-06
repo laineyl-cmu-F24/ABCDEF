@@ -149,7 +149,7 @@ let getAnnualReturn (context: HttpContext) =
         | Some tradingParams, startTimeOpt ->
             try
                 let initialAmount = tradingParams.InitialInvestmentAmount
-                let! pnlValue = getCurrentPnL
+                let! pnlValue = getCurrentPnL ()
                 let annualReturn = AnnualizedMetric initialAmount startTimeOpt pnlValue // Pass start time & pnl
                 return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
             with
@@ -161,7 +161,7 @@ let getAnnualReturn (context: HttpContext) =
 let getCurrPnl (context: HttpContext) =
     async {
         try
-            let! pnl = getCurrentPnL
+            let! pnl = getCurrentPnL ()
             printfn $"Got pnl: %A{pnl}"
             return (Successful.OK "Success\n", $"Got pnl: %A{pnl}")
         with
