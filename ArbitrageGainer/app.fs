@@ -5,6 +5,7 @@ open Suave
 open Suave.Operators
 open Suave.Filters
 open MongoDB.Driver
+open MongoDB.Bson
 
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
@@ -116,7 +117,7 @@ let getHistoricalArbitrage (context: HttpContext) =
                     let tradeRecords =
                         result
                         |> Seq.map (fun (pair, opportunityCount) ->
-                            { Pair =  pair; OpportunityCount = opportunityCount }
+                            { Id = ObjectId.GenerateNewId(); Pair =  pair; OpportunityCount = opportunityCount }
                         )
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)

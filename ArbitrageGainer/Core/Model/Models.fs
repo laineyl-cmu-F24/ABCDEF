@@ -1,8 +1,11 @@
 module Core.Model.Models
 open System
+open MongoDB.Driver
+open MongoDB.Bson
 open FSharp.Data
 
 type TradeRecord = {
+    Id: ObjectId
     Pair: string
     OpportunityCount: int
 }

@@ -11,6 +11,7 @@ open Service.ApplicationService.MarketData
 open  Service.ApplicationService.TradingAgent
 open Service.ApplicationService.TradingState
 open Service.ApplicationService.Cache
+open Infrastructure.Repository.DatabaseInterface
 
 let toggleTrading () =
     async {
@@ -21,7 +22,7 @@ let toggleTrading () =
             |Some tradingParams ->
                 let tradingParams = tradingParams
                 //need to be change with actual
-                let tradeHistory = currTradingState.TradeHistory
+                let tradeHistory = getHistoricalOpportunity()
                 // let tradeHistory = [
                 //     { Pair = "DOT-USD"; OpportunityCount = 2 }
                 //     { Pair = "MKR-USD"; OpportunityCount = 34 }

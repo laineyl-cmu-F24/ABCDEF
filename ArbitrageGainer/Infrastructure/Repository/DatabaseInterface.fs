@@ -75,7 +75,17 @@ let getTransactionWithinTime (startTime:DateTime) (endTime:DateTime) =
         )
     tryDbOperation (fun () -> transactionCollection.Find(filter).ToList()) ()
     
-let historicalArbitrageOpportunity = db.GetCollection<HistoricalArbitrageOpportunity>("historicalArbitrageOpportunities")
+let historicalArbitrageOpportunity = db.GetCollection<TradeRecord>("historicalArbitrageOpportunities")
 
-let saveHistoricalArbitrageOpportunity (opportunity: HistoricalArbitrageOpportunity) =
-    historicalArbitrageOpportunity.InsertOne(opportunity)
+let saveHistoricalArbitrageOpportunity (opportunity: TradeRecord) =
+    try
+        historicalArbitrageOpportunity.InsertOne(opportunity)
+        Ok ()
+    with
+    | ex -> Error (DatabaseError ex.Message)
+
+let getHistoricalOpportunity () =
+    historicalArbitrageOpportunity
+        .Find(Builders<TradeRecord>.Filter.Empty)
+        .ToList()
+    |> Seq.toList

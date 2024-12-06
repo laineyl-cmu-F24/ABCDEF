@@ -2,6 +2,7 @@
 open FSharp.Data
 open System.IO
 open Core.Model.Models
+open MongoDB.Bson
 open Infrastructure.Repository.DatabaseInterface
 
 type HistoricalData =
@@ -87,8 +88,9 @@ let calculateHistoricalArbitrage file=
     reduceResult |> Seq.iter(fun (pair, opportunities) ->
         printfn $"{pair}, {opportunities} opportunities"
         
-        let opportunity = { Pair = pair; Opportunity = opportunities }
-        saveHistoricalArbitrageOpportunity opportunity
-        
+        let opportunity = { Id = ObjectId.GenerateNewId(); Pair = pair; OpportunityCount = opportunities }
+        match saveHistoricalArbitrageOpportunity opportunity with
+        | Ok _ -> printfn $"Successfully saved opportunity for %s{pair}"
+        | _ -> printfn $"Error saving opportunity for %s{pair}"
     )
     reduceResult
