@@ -191,18 +191,12 @@ type KrakenSubmitOrderResponse = {
 }
 
 type KrakenRetrieveOrderTradesResult = {
-    amount: 
+    vol_exec: string 
 }
 
 type KrakenRetrieveOrderTradesResponse = {
-    id: string
-    symbol: string
-    exchange: string
-    price: decimal
-    amount: decimal
-    timestamp: string
-    side: string
-    ``type``: string
+    error: string list
+    result: KrakenRetrieveOrderTradesResult
 }
 
 type BitstampEmitOrderRequest = {
