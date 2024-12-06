@@ -28,8 +28,20 @@ type AgentMessage =
     | GetStartTradingTime of AsyncReplyChannel<int64 option>
 
 /// The initial state of the system
+
+let tradingParams: TradingParameters option = Some {
+    NumOfCrypto = 5
+    MinSpreadPrice = 0.05M
+    MinTransactionProfit = 5.0M
+    MaxTransactionValue = 2000.0M
+    MaxTradeValue = 5000.0M
+    InitialInvestmentAmount = 0.0M 
+    Email = Some "pkotchav@andrew.cmu.edu"
+    PnLThreshold = None
+}
+
 let initialState = {
-    TradingParams = None
+    TradingParams = tradingParams
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc = None
