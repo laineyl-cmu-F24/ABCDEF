@@ -35,7 +35,7 @@ let tradingParams: TradingParameters option = Some {
     MinTransactionProfit = 5.0M
     MaxTransactionValue = 2000.0M
     MaxTradeValue = 5000.0M
-    InitialInvestmentAmount = 0.0M 
+    InitialInvestmentAmount = 5000.0M 
     Email = Some "pkotchav@andrew.cmu.edu"
     PnLThreshold = None
 }

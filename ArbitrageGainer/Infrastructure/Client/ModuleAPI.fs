@@ -8,6 +8,9 @@ open System.Threading.Tasks
 open Newtonsoft.Json
 open Infrastructure.Repository.DatabaseInterface
 open Core.Model.Models
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+
 
 let httpClient = new HttpClient()
 
@@ -169,10 +172,19 @@ let submitBitfinexOrder (order: Order) : Task<Order> = task {
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
-    printfn $"Bitfinex Response body: %s{responseBody}"
-    let submitResponse = JsonConvert.DeserializeObject<BitfinexSubmitOrderResponse>(responseBody)
     
-    let updatedOrder = { order with OrderId = submitResponse.id }
+    printfn $"Bitfinex Response body: %s{responseBody}"
+    let jArr = JArray.Parse(responseBody)
+    let mts = jArr.[0].Value<int64>()
+    let msgType = jArr.[1].Value<string>()
+    let messageId = jArr.[2].Value<int64>()
+    let status = jArr.[6].Value<string>()
+    let text = jArr.[7].Value<string>()
+    let ordersArray = jArr.[4] :?> JArray
+    let firstOrder = ordersArray.[0] :?> JArray
+    let extractedOrderId = firstOrder.[0].Value<string>()
+    
+    let updatedOrder = { order with OrderId = extractedOrderId }
     
     let result = saveOrder updatedOrder
     printfn $"Submitted Bitfinex order: %A{updatedOrder}"

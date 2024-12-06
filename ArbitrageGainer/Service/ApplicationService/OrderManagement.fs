@@ -7,11 +7,12 @@ open MongoDB.Driver
 open Core.Model.Models
 open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
+open Service.ApplicationService.PnL
 
 // TODO: wait to be called by data feed
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
         match orderStatus.Status with
-         // TODO: add PNL here !!
+         
         | "FullyFilled" ->
             let transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
@@ -25,6 +26,8 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             }
             let result = saveTransaction transaction
             printfn $"Transaction stored: %A{transaction}"
+            addTransaction transaction
+            printfn "Transaction added to PNL"
         | "PartiallyFilled" ->
             let transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
@@ -38,6 +41,8 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             }
             let result = saveTransaction transaction
             printfn $"Partial transaction stored: %A{transaction}"
+            addTransaction transaction
+            printfn "Transaction added to PNL"
 
             // Emit a new order for the remaining amount
             let newOrder = {
