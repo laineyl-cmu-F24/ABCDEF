@@ -123,31 +123,28 @@ let getHistoricalArbitrage (context: HttpContext) =
     async {
         let logger = createLogger
         logger "Historical Arbitrage Analysis - Started"
-        let req = context.request
-        match req.formData "file" with
-        | Choice1Of2 filePath ->
-            // printfn $"Requested file path: %s{filePath}"
-            match filePath with
-            | filePath when File.Exists filePath ->
-                try
-                    let result = calculateHistoricalArbitrage filePath
-                    let tradeRecords =
-                        result
-                        |> Seq.map (fun (pair, opportunityCount) ->
-                            { Id = ObjectId.GenerateNewId(); Pair =  pair; OpportunityCount = opportunityCount }
-                        )
-                        |> Seq.toList
-                    let history = SetTradeHistory (tradeRecords)
-                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
-                    return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
-                with
-                | ex ->
-                    return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
-            | _ ->
-                return (RequestErrors.NOT_FOUND "Error\n", "File not found")
-        | _ ->
-            return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
+        
+        // Define the file path for historicalData.txt
+        let filePath = Path.Combine(__SOURCE_DIRECTORY__, "historicalData.txt")
+        
+        if File.Exists filePath then
+            try
+                let result = calculateHistoricalArbitrage filePath
+                let tradeRecords =
+                    result
+                    |> Seq.map (fun (pair, opportunityCount) ->
+                        { Id = ObjectId.GenerateNewId(); Pair = pair; OpportunityCount = opportunityCount }
+                    )
+                    |> Seq.toList
+                let history = SetTradeHistory tradeRecords
+                return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
+            with
+            | ex ->
+                return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
+        else
+            return (RequestErrors.NOT_FOUND "Error\n", "historicalData.txt not found")
     }
+
     
 let getCrossTradeCurrencyPairs (context: HttpContext) =
     async {

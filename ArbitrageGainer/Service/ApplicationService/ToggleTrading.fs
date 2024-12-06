@@ -24,9 +24,7 @@ let toggleTrading () =
                 let startTimestamp = DateTime.UtcNow
                 setStartTradingTime (Some startTimestamp.Ticks) // Store the timestamp in state
                 let tradingParams = tradingParams
-                let tradeHistory = currTradingState.TradeHistory
-                // need to be change with actual
-                let crossTradedCryptos = Set.ofSeq findCurrencyPairs
+                // let tradeHistory = currTradingState.TradeHistory
                 //need to be change with actual
                 let tradeHistory = getHistoricalOpportunity()
                 let crossTradedCryptos = getCurrencyPair()

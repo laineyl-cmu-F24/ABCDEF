@@ -272,15 +272,10 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
     | Some orderResult ->
         let fulfilledAmount = decimal orderResult.vol_exec
         let remainingAmount = order.Amount - fulfilledAmount
-        let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
-    let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse list>(responseBody)
-
-    let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
-    let remainingAmount = order.Amount - fulfilledAmount
-    let status =
-        match remainingAmount with
-        | 0m -> "FullyFilled"
-        | _ -> "PartiallyFilled"
+        let status =
+            match remainingAmount with
+            | 0m -> "FullyFilled"
+            | _ -> "PartiallyFilled"
 
         let orderStatus = {
             OrderId = order.OrderId
