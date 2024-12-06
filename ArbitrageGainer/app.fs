@@ -1,6 +1,7 @@
 module app
 open System
 open System.IO
+open Microsoft.AspNetCore.Http.Features
 open Suave
 open Suave.Operators
 open Suave.Filters
@@ -156,6 +157,19 @@ let getAnnualReturn (context: HttpContext) =
 
         |_ -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
     }
+    
+let getCurrPnl (context: HttpContext) =
+    async {
+        try
+            let! pnl = getCurrentPnL
+            printfn $"Got pnl: %A{pnl}"
+            return (Successful.OK "Success\n", $"Got pnl: %A{pnl}")
+        with
+        | ex ->
+            printfn "Error retrieving pnl"
+            return (RequestErrors.BAD_REQUEST "Error", "Error retrieving pnl")
+        
+    }
 
 let app =
     choose [
@@ -166,6 +180,7 @@ let app =
         GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
         POST >=> path "/api/pnl" >=> handleRequest togglePnL
+        GET >=> path "/api/current-pnl" >=> handleRequest getCurrPnl
     ]
 
 
