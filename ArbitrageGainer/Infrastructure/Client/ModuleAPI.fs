@@ -145,27 +145,25 @@ let krakenSubmitOrderUrl = "https://one8656-testing-server.onrender.com/order/pl
 
 let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
 
-let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
-let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_order/"
+//let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
+//let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_order/"
+let bistampEmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/api/v2/:orderSide/market/:currencyPair/" 
 let bitstampRetrieveOrderStatusUrl = "https://www.bitstamp.net/api/v2/order_status/"
 
 let submitBitfinexOrder (order: Order) : Task<Order> = task {
-   //let requestBody = {
-        //symbol = order.Symbol
-        //amount = order.Amount
-        //price = order.Price
-        //exchange = "bitfinex"
-        //side = match order.Side with | Buy -> "buy" | Sell -> "sell"
-        //``type`` = "market"
-    //}
-    let requestBody = sprintf "type=%s&symbol=%s&amount=%s&price=%s" "MARKET" "tDOTUSD" "150.0" "5.2529"
+    let requestBody = {
+        symbol = "t" + order.Symbol.Replace("-", "").ToUpperInvariant()
+        amount = order.Amount
+        price = order.Price
+        exchange = "bitfinex"
+        side = match order.Side with | Buy -> "buy" | Sell -> "sell"
+        ``type`` = "MARKET"
+    }
+    //let requestBody = sprintf "type=%s&symbol=%s&amount=%s&price=%s" "MARKET" "tDOTUSD" "150.0" "5.2529"
 
     let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/x-www-form-urlencoded")
+    let content = new StringContent(json, Encoding.UTF8, "application/json")
     
-    // Log the request details
-    printfn $"Submitting Bitfinex order: URL = %s{bitfinexSubmitOrderUrl}, Body = %s{requestBody}"
-
     let! response = httpClient.PostAsync(bitfinexSubmitOrderUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
 
@@ -207,17 +205,17 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 }
 
 let submitKrakenOrder (order: Order) : Task<Order> = task {
-    //let requestBody = 
-        //pair = order.Symbol
-        //``type`` = match order.Side with | Buy -> "buy" | Sell -> "sell"
-        //ordertype = "market"
-        //volume = order.Amount
-        //price = order.Price
-    //}
-    let requestBody = sprintf "nonce=%i&ordertype=%s&type=%s&volume=%s&pair=%s&price=%s" 1 "market" "sell" "22.45" "XXFETUSD" "58.14"
+    let requestBody = {
+        pair = "XX" + order.Symbol.Replace("-", "").ToUpperInvariant()
+        ``type`` = match order.Side with | Buy -> "buy" | Sell -> "sell"
+        ordertype = "market"
+        volume = order.Amount
+        price = order.Price
+        nonce = 1
+    }
 
     let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/x-www-form-urlencoded")
+    let content = new StringContent(json, Encoding.UTF8, "application/json")
 
     let! response = httpClient.PostAsync(krakenSubmitOrderUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
@@ -261,20 +259,18 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
 }
 
 let emitBitstampOrder (order: Order) : Task<Order> = task {
-    //let url =
-        //match order.Side with
-        //| Buy -> bitstampEmitBuyOrderUrl
-        //| Sell -> bitstampEmitSellOrderUrl
-    let url = "https://one8656-testing-server.onrender.com/order/place/api/v2/buy/market/fetusd/"
-
-    //let requestBody = {
-        //amount = order.Amount
-        //price = order.Price
-    //}
-    let requestBody = sprintf "amount=%f&price=%f" 22.45 58.06
-
+    let url =
+        bistampEmitOrderUrl
+        |> fun u -> u.Replace(":orderSide",  match order.Side with | Buy -> "buy" | Sell -> "sell")
+                        .Replace(":currencyPair", order.Symbol.Replace("-", "").ToLowerInvariant())
+        
+    let requestBody = {
+        amount = order.Amount
+        price = order.Price
+    }
+    
     let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/x-www-form-urlencoded")
+    let content = new StringContent(json, Encoding.UTF8, "application/json")
 
     let! response = httpClient.PostAsync(url, content)
     response.EnsureSuccessStatusCode() |> ignore

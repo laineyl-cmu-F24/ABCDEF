@@ -111,6 +111,7 @@ let WebSocketClient uri apiKey symbols tradingParams =
                                     match receiveResult with
                                     |Error e -> return Error e
                                     |Ok message ->
+                                        printfn "Received message: %s" message
                                         match parseMessage message with
                                         | Ok (QuoteReceived quote) ->
                                             do! processArbitrageOpportunities cacheAgent tradingParams

@@ -170,6 +170,7 @@ type KrakenSubmitOrderRequest = {
     ordertype: string
     volume: decimal
     price: decimal
+    nonce: int
 }
 
 type KrakenSubmitOrderResult = {
