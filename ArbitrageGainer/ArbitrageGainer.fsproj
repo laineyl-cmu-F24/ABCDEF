@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <!-- Project Configuration -->
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
-    </PropertyGroup>
-
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
     <ItemGroup>
         <Compile Include="Core\Model\Models.fs" />
         <Compile Include="Core\CoreService\ParsingMessage.fs" />
