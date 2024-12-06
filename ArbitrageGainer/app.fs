@@ -165,6 +165,7 @@ let app =
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
         GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
+        POST >=> path "/api/pnl" >=> handleRequest togglePnL
     ]
 
 
