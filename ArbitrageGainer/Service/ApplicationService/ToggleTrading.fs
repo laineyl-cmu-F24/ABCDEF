@@ -23,9 +23,7 @@ let toggleTrading () =
                 let tradingParams = tradingParams
                 //need to be change with actual
                 let tradeHistory = getHistoricalOpportunity()
-                //need to be change with actual
                 let crossTradedCryptos = getCurrencyPair()
-
                 //let uri = Uri("wss://socket.polygon.io/crypto")
                 //let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
                 let uri = Uri("wss://one8656-live-data.onrender.com/")
