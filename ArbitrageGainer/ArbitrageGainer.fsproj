@@ -15,6 +15,7 @@
         <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
         <Compile Include="Service\ApplicationService\PnL_Calculation.fs" />
         <Compile Include="Infrastructure\Client\ModuleAPI.fs" />
+        <Compile Include="Service\ApplicationService\TradingState.fs" />
         <Compile Include="Service\ApplicationService\OrderManagement.fs" />
         <Compile Include="Service\ApplicationService\TradingAgent.fs" />
         <Compile Include="Infrastructure\Client\WebSocketClient.fs" />
@@ -22,7 +23,7 @@
         <Compile Include="Service\ApplicationService\MarketData.fs" />
         <Compile Include="Service\ApplicationService\Metric.fs" />
         <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
-        <Compile Include="Service\ApplicationService\TradingState.fs" />
+        
         <Compile Include="Service\ApplicationService\ToggleTrading.fs" />
         
         <Compile Include="app.fs" />

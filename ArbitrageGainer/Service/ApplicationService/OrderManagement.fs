@@ -8,8 +8,8 @@ open Core.Model.Models
 open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
 open Service.ApplicationService.PnL
+open Service.ApplicationService.TradingState
 
-// TODO: wait to be called by data feed
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
         match orderStatus.Status with
          
@@ -81,9 +81,13 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let availableBuyAmount = buyQuote.RemainingAskSize
     let availableSellAmount = sellQuote.RemainingBidSize
     let desiredAmount = Math.Min(availableBuyAmount, availableSellAmount)
-
-    // Configuration Constants
-    let MAX_TOTAL_TRANSACTION_VALUE = decimal 2000.0
+    
+    let! currentState = getTradingState ()
+    let MAX_TOTAL_TRANSACTION_VALUE =
+        match currentState.TradingParams with
+        | Some tp -> tp.MaxTransactionValue
+        | None -> failwith "Trading parameters are not available."
+    // let MAX_TOTAL_TRANSACTION_VALUE = decimal 2000.0
 
     // Ensure total transaction value does not exceed MAX_TOTAL_TRANSACTION_VALUE
     let buyTotal = desiredAmount * buyPrice

@@ -2,7 +2,7 @@ module Service.ApplicationService.TradingState
 
 // Assuming these types are defined in your project
 open Core.Model.Models  // For TradingParameters, TradeRecord
-open Infrastructure.Client.WebSocketClient  // For DomainResult
+// open Infrastructure.Client.WebSocketClient  // For DomainResult
 
 /// Represents the overall system state
 type SystemState = {
