@@ -1,20 +1,22 @@
 module Service.ApplicationService.PnL
 open System
 open Core.Model.Models
+open Suave
 open Infrastructure.Repository.DatabaseInterface
-open  Service.ApplicationService.Toggle
 
 type PnLState = {
     TotalPnL: decimal
-    PnLThreshold: decimal option
+    // PnLThreshold: decimal option
     Email: string option
+    Toggle: bool
 }
 
 // Initial PnL State
 let initialPnLState = {
     TotalPnL = 0M
-    PnLThreshold = None
-    Email = None 
+    // PnLThreshold = None
+    Email = None
+    Toggle = false
 }
 
 type PnLMessage =
@@ -24,6 +26,7 @@ type PnLMessage =
     | ResetAgent
     | GetHistoricalPnL of DateTime * DateTime * AsyncReplyChannel<decimal option>
     | GetCurrentPnL of AsyncReplyChannel<decimal>
+    | TogglePnl of bool
 
 // Calculate the P&L of a transaction
 let calculatePLofTransaction (transaction: Transaction) =
@@ -50,35 +53,35 @@ let PnLAgent = MailboxProcessor<PnLMessage>.Start(fun inbox ->
         async {
             let! message = inbox.Receive()
             match message with
+            
+            | TogglePnl toggle ->
+                return! loop {state with Toggle = toggle }
+            
             | AddTransaction transaction ->
-                let pl = calculatePLofTransaction transaction
-                let newTotalPnL = state.TotalPnL + pl
-                match state.PnLThreshold with
-                | Some threshold when newTotalPnL >= threshold ->
-                    match state.Email with
-                    | Some email ->
-                        printf "send email"
-                        // sendEmail email "Threshold Reached" (sprintf "Your PnL has reached %.2f." newTotalPnL)
-                    | _ -> ()
-                    let! toggleResult = toggleTrading ()
-                    return! loop initialPnLState
-                | _ -> return! loop {state with TotalPnL = newTotalPnL}
+                match state.Toggle with
+                | true -> 
+                    let pl = calculatePLofTransaction transaction
+                    let newTotalPnL = state.TotalPnL + pl
+                    return! loop {state with TotalPnL = newTotalPnL}
+                | _ -> return! loop state
                
-            | SetThreshold threshold ->
-                let newThreshold =
-                    match threshold with
-                    | 0m -> None
-                    | _ -> Some threshold
-                return! loop{state with PnLThreshold = newThreshold }
+            // | SetThreshold threshold ->
+            //     let newThreshold =
+            //         match threshold with
+            //         | 0m -> None
+            //         | _ -> Some threshold
+            //     return! loop{state with PnLThreshold = newThreshold }
             
             | GetCurrentPnL reply ->
                 reply.Reply(state.TotalPnL)
                 return! loop state
+                
             | GetHistoricalPnL (starting, ending, reply) ->
                 match calculatePLofWithinTime starting ending with
                 | Ok pl -> reply.Reply(Some pl)  // Reply with the calculated P&L
                 | Error _ -> reply.Reply(None)    // Reply with None in case of error
                 return! loop state
+                
             | ResetAgent ->
                 return! loop initialPnLState
         }
@@ -102,4 +105,26 @@ let getHistoricalPnLWithIn (starting: DateTime) (ending: DateTime) =
 // Reset the PnL Agent
 let resetPnLAgent =
     PnLAgent.Post(ResetAgent)
+    
+// Toggle PnL
+let TogglePnL(toggle: bool)=
+    printf "toggled pnl"
+    PnLAgent.Post(TogglePnl toggle)
 
+let togglePnL (context: HttpContext) =
+    async {
+        let req = context.request
+        match req.formData "toggle" with
+        | Choice1Of2 toggleStr ->
+            match System.Boolean.TryParse(toggleStr) with
+            | (true, toggle) ->
+                // Call the TogglePnL function with the parsed toggle value
+                TogglePnL toggle
+                return (Successful.OK "PnL calculation toggle updated successfully\n", ())
+            | _ ->
+                // Invalid boolean value
+                return (RequestErrors.BAD_REQUEST "Invalid toggle value. Use 'true' or 'false'.\n",())
+        | _ -> 
+            // Parameter not provided
+            return (RequestErrors.BAD_REQUEST "Missing 'toggle' parameter in the request.\n", ())
+    }

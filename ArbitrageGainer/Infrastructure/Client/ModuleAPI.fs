@@ -180,7 +180,12 @@ let submitBitfinexOrder (order: Order) : Task<Order> = task {
 }
 
 let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
-    let requestBody = { order_id = order.OrderId }
+    let requestBody = 
+        sprintf "type=%s&symbol=%s&amount=%s&price=%s" 
+            "MARKET" 
+            order.Symbol 
+            (order.Amount.ToString("F1")) 
+            (order.Price.ToString("F4"))
     let json = JsonConvert.SerializeObject(requestBody)
     let content = new StringContent(json, Encoding.UTF8, "application/json")
 
