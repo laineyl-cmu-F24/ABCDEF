@@ -143,7 +143,8 @@ let bitfinexRetrieveOrderTradesUrl = "https://api.bitfinex.com/v2/auth/r/order/{
 //let krakenSubmitOrderUrl = "https://api.kraken.com/0/private/AddOrder"
 let krakenSubmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/0/private/AddOrder"
 
-let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
+//let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
+let krakenQueryOrderInfoUrl = "https://one8656-testing-server.onrender.com/order/status/0/private/QueryOrders"
 
 //let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
 //let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_order/"

@@ -190,6 +190,10 @@ type KrakenSubmitOrderResponse = {
     result: KrakenSubmitOrderResult
 }
 
+type KrakenRetrieveOrderTradesResult = {
+    amount: 
+}
+
 type KrakenRetrieveOrderTradesResponse = {
     id: string
     symbol: string
