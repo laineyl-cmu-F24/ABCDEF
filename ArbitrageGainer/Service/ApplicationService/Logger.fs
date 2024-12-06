@@ -4,8 +4,8 @@ namespace Logging
 
     module Logger = 
         // Define a function to create a logger function
-        let createLogger filePath =
-            // let filePath = "log.txt"
+        let createLogger =
+            let filePath = "log.txt"
             // Logger function
             let logMessage (invokingWorkflowName: string) =
                 // Prepare log entry with current date, time, and invoking workflow name

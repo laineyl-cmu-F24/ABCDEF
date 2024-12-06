@@ -16,22 +16,18 @@ open Logging.Logger
 
 let toggleTrading () =
     async {
-        let logger = createLogger "realTimeTradingLog.txt"
+        let logger = createLogger
         let! currTradingState = getTradingState ()
         match currTradingState.IsTradingActive with
         | false ->
             match currTradingState.TradingParams with
             |Some tradingParams ->
                 let startTimestamp = DateTime.UtcNow
-                logger $"Start Trading: {startTimestamp}"
                 setStartTradingTime (Some startTimestamp.Ticks) // Store the timestamp in state
                 let tradingParams = tradingParams
                 let tradeHistory = currTradingState.TradeHistory
-                //need to be change with actual
+                // need to be change with actual
                 let crossTradedCryptos = Set.ofSeq findCurrencyPairs
-                // let crossTradedCryptos = Set.ofSeq ["MKR-USD"; "USD-BTC"; "SOL-USD"; "DOT-USD"]
-                //let uri = Uri("wss://socket.polygon.io/crypto")
-                //let apiKey = "phN6Q_809zxfkeZesjta_phpgQCMB2Dw"
                 let uri = Uri("wss://one8656-live-data.onrender.com/")
                 let apiKey = ""
                 let filteredCrypto = runTradingWorkflow tradingParams crossTradedCryptos tradeHistory
@@ -43,11 +39,11 @@ let toggleTrading () =
                     //  replaced the above with refactored stateAgent:
                     setIsTradingActive true
                     setWebSocketClientCloseFunc (Some closeFunc)
-                    logger "Trading started."
+                    logger "Toggle Trading - Started"
                     let! trade = processArbitrageOpportunities (createCacheAgent()) tradingParams
                     return (Successful.OK "Trading started\n", ())
                 | Error e ->
-                    logger $"Failed to start trading: {e}"
+                    logger $"Toggle Trading - Failed to start: {e}"
                     return (RequestErrors.BAD_REQUEST (sprintf "Failed to start trading: %A" e), ())
             | None ->
                 logger "Trading parameters are not set."
@@ -62,7 +58,7 @@ let toggleTrading () =
                     //  replaced the above with refactored stateAgent:
                     setIsTradingActive false
                     setWebSocketClientCloseFunc None
-                    logger "Trading stopped successfully."
+                    logger "Toggle Trading - End."
                     return (Successful.OK "Trading stopped\n", ())
                 | Error e ->
                     logger $"Error during close: {e}"

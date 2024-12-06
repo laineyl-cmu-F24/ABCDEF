@@ -7,6 +7,7 @@ open MongoDB.Driver
 open Core.Model.Models
 open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
+open Logging.Logger
 
 // TODO: wait to be called by data feed
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
@@ -56,10 +57,13 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             let! submittedOrder =
                 match order.Exchange with
                 | Bitfinex ->
+                    createLogger "Order Emitted - Bitfinex"
                     submitBitfinexOrder newOrder
                 | Kraken ->
+                    createLogger "Order Emitted - Kraken"
                     submitKrakenOrder newOrder
                 | Bitstamp ->
+                    createLogger "Order Emitted - Bitstamp"
                     emitBitstampOrder newOrder
                     
             return ()

@@ -3,6 +3,7 @@ open System
 open MongoDB.Driver
 open MongoDB.Bson
 open Core.Model.Models
+open Logging.Logger
 
 
 // DB item definition
@@ -32,7 +33,6 @@ let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 // let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 let createCurrencyPair (pairName: string) =
     try
-        // printfn "received name %A" pairName
         let newCurrencyPair = { Id = ObjectId.GenerateNewId(); name = pairName }
         let _ = currencyPairsCollection.InsertOne(newCurrencyPair)
         // printfn "Inserted currency pair: %A" createRes

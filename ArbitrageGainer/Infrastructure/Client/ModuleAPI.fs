@@ -8,6 +8,7 @@ open System.Threading.Tasks
 open Newtonsoft.Json
 open Infrastructure.Repository.DatabaseInterface
 open Core.Model.Models
+open Logging.Logger
 
 let httpClient = new HttpClient()
 
@@ -220,6 +221,7 @@ let submitKrakenOrder (order: Order) : Task<Order> = task {
 
     let orderId = List.head submitResponse.txid
     let updatedOrder = { order with OrderId = orderId }
+
     let result = saveOrder updatedOrder
     printfn $"Submitted Kraken order: %A{updatedOrder}"
     return updatedOrder
@@ -275,6 +277,7 @@ let emitBitstampOrder (order: Order) : Task<Order> = task {
     let emitResponse = JsonConvert.DeserializeObject<BitstampEmitOrderResponse>(responseBody)
 
     let updatedOrder = { order with OrderId = emitResponse.id }
+
     let result = saveOrder updatedOrder
     printfn $"Emitted Bitstamp order: %A{updatedOrder}"
     return updatedOrder

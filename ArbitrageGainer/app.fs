@@ -97,9 +97,8 @@ let getTradingParameters  (context: HttpContext) =
     
 let getHistoricalArbitrage (context: HttpContext) =
     async {
-        let logger = createLogger "historicalArbitrageLog.txt"
-        logger "Historical Arbitrage Analysis: Start"
-        let startTimestamp = DateTime.UtcNow
+        let logger = createLogger
+        logger "Historical Arbitrage Analysis - Started"
         let req = context.request
         match req.formData "file" with
         | Choice1Of2 filePath ->
@@ -116,31 +115,30 @@ let getHistoricalArbitrage (context: HttpContext) =
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)
                     // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
-                    let endTimestamp = DateTime.UtcNow
-                    logger $"Historical Arbitrage Analysis: End - Time Taken: {endTimestamp - startTimestamp}"
+                    logger "Historical Arbitrage Analysis - End"
                     return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
                 with
                 | ex ->
-                    let endTimestamp = DateTime.UtcNow
-                    logger $"Historical Arbitrage Analysis: End - Invalid Input - Time Taken: {endTimestamp - startTimestamp}"
+                    logger "Historical Arbitrage Analysis - Failed to End Normally"
                     return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
             | _ ->
-                let endTimestamp = DateTime.UtcNow
-                logger $"Historical Arbitrage Analysis: End - URL Not Found - Time Taken: {endTimestamp - startTimestamp}"
+                logger "Historical Arbitrage Analysis - End: Failed"
                 return (RequestErrors.NOT_FOUND "Error\n", "File not found")
         | _ ->
-            let endTimestamp = DateTime.UtcNow
-            logger $"Historical Arbitrage Analysis: End - Bad Request - Time Taken: {endTimestamp - startTimestamp}"
+            logger "Historical Arbitrage Analysis - End: Failed"
             return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
     }
     
 let getCrossTradeCurrencyPairs (context: HttpContext) =
     async {
+        let logger = createLogger
         try
+            logger "Get Cross Currency Pair - Started"
             let currencyPair = findCurrencyPairs
             return (Successful.OK "Success\n", $"Got cross-trade currency pairs: %A{currencyPair}")
         with
         | ex ->
+            logger "Get Cross Currency Pair - Start: Failed"
             return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: %s{ex.Message}")
     }
     
