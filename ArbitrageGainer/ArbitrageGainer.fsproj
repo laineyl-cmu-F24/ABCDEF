@@ -10,11 +10,13 @@
     </ItemGroup>
 
     <ItemGroup>
+       
         <Compile Include="Service\ApplicationService\Cache.fs" />
         <Compile Include="Service\ApplicationService\Workflow.fs" />
         <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
         <Compile Include="Service\ApplicationService\PnL_Calculation.fs" />
         <Compile Include="Infrastructure\Client\ModuleAPI.fs" />
+        <Compile Include="Infrastructure\Client\EmailClient.fs" />
         <Compile Include="Service\ApplicationService\TradingState.fs" />
         <Compile Include="Service\ApplicationService\OrderManagement.fs" />
         <Compile Include="Service\ApplicationService\TradingAgent.fs" />
