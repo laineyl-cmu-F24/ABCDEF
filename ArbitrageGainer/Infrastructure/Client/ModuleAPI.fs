@@ -135,10 +135,14 @@ let processKrakenPairs (krakenData: seq<KrakenElem.Root option>) =
     |> Seq.filter (fun converted -> converted <> "")
     |> Seq.distinct
 
-let bitfinexSubmitOrderUrl = "https://api.bitfinex.com/v2/auth/w/order/submit"
+//let bitfinexSubmitOrderUrl = "https://api.bitfinex.com/v2/auth/w/order/submit"
+let bitfinexSubmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/v2/auth/w/order/submit"
+
 let bitfinexRetrieveOrderTradesUrl = "https://api.bitfinex.com/v2/auth/r/order/{symbol}:{id}/trades"
 
-let krakenSubmitOrderUrl = "https://api.kraken.com/0/private/AddOrder"
+//let krakenSubmitOrderUrl = "https://api.kraken.com/0/private/AddOrder"
+let krakenSubmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/0/private/AddOrder"
+
 let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
 
 let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
@@ -146,24 +150,29 @@ let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_orde
 let bitstampRetrieveOrderStatusUrl = "https://www.bitstamp.net/api/v2/order_status/"
 
 let submitBitfinexOrder (order: Order) : Task<Order> = task {
-    let requestBody = {
-        symbol = order.Symbol
-        amount = order.Amount
-        price = order.Price
-        exchange = "bitfinex"
-        side = match order.Side with | Buy -> "buy" | Sell -> "sell"
-        ``type`` = "exchange market"
-    }
+   //let requestBody = {
+        //symbol = order.Symbol
+        //amount = order.Amount
+        //price = order.Price
+        //exchange = "bitfinex"
+        //side = match order.Side with | Buy -> "buy" | Sell -> "sell"
+        //``type`` = "market"
+    //}
+    let requestBody = sprintf "type=%s&symbol=%s&amount=%s&price=%s" "MARKET" "tDOTUSD" "150.0" "5.2529"
 
     let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/json")
+    let content = new StringContent(json, Encoding.UTF8, "application/x-www-form-urlencoded")
+    
+    // Log the request details
+    printfn $"Submitting Bitfinex order: URL = %s{bitfinexSubmitOrderUrl}, Body = %s{requestBody}"
 
     let! response = httpClient.PostAsync(bitfinexSubmitOrderUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn $"Bitfinex Response body: %s{responseBody}"
     let submitResponse = JsonConvert.DeserializeObject<BitfinexSubmitOrderResponse>(responseBody)
-
+    
     let updatedOrder = { order with OrderId = submitResponse.id }
     
     let result = saveOrder updatedOrder
@@ -198,24 +207,27 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 }
 
 let submitKrakenOrder (order: Order) : Task<Order> = task {
-    let requestBody = {
-        pair = order.Symbol
-        ``type`` = match order.Side with | Buy -> "buy" | Sell -> "sell"
-        ordertype = "market"
-        volume = order.Amount
-        price = order.Price
-    }
+    //let requestBody = 
+        //pair = order.Symbol
+        //``type`` = match order.Side with | Buy -> "buy" | Sell -> "sell"
+        //ordertype = "market"
+        //volume = order.Amount
+        //price = order.Price
+    //}
+    let requestBody = sprintf "nonce=%i&ordertype=%s&type=%s&volume=%s&pair=%s&price=%s" 1 "market" "sell" "22.45" "XXFETUSD" "58.14"
 
     let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/json")
+    let content = new StringContent(json, Encoding.UTF8, "application/x-www-form-urlencoded")
 
     let! response = httpClient.PostAsync(krakenSubmitOrderUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn $"Kraken Response body: %s{responseBody}"
     let submitResponse = JsonConvert.DeserializeObject<KrakenSubmitOrderResponse>(responseBody)
+    printfn $"Kraken Deserilized Response body: %s{responseBody}"
 
-    let orderId = List.head submitResponse.txid
+    let orderId = List.head submitResponse.result.txid
     let updatedOrder = { order with OrderId = orderId }
     let result = saveOrder updatedOrder
     printfn $"Submitted Kraken order: %A{updatedOrder}"
@@ -249,23 +261,26 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
 }
 
 let emitBitstampOrder (order: Order) : Task<Order> = task {
-    let url =
-        match order.Side with
-        | Buy -> bitstampEmitBuyOrderUrl
-        | Sell -> bitstampEmitSellOrderUrl
+    //let url =
+        //match order.Side with
+        //| Buy -> bitstampEmitBuyOrderUrl
+        //| Sell -> bitstampEmitSellOrderUrl
+    let url = "https://one8656-testing-server.onrender.com/order/place/api/v2/buy/market/fetusd/"
 
-    let requestBody = {
-        amount = order.Amount
-        price = order.Price
-    }
+    //let requestBody = {
+        //amount = order.Amount
+        //price = order.Price
+    //}
+    let requestBody = sprintf "amount=%f&price=%f" 22.45 58.06
 
     let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/json")
+    let content = new StringContent(json, Encoding.UTF8, "application/x-www-form-urlencoded")
 
     let! response = httpClient.PostAsync(url, content)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn $"Bitstamp Response body: %s{responseBody}"
     let emitResponse = JsonConvert.DeserializeObject<BitstampEmitOrderResponse>(responseBody)
 
     let updatedOrder = { order with OrderId = emitResponse.id }
