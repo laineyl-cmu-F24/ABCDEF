@@ -239,27 +239,28 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
     let content = new StringContent(requestBody, Encoding.UTF8, "application/x-www-form-urlencoded")
 
     let! response = httpClient.PostAsync(krakenQueryOrderInfoUrl, content)
-    printfn "Response Status Code: %d" (int response.StatusCode)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
     printfn "Received response body: %s" responseBody
-    let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse list>(responseBody)
+    let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse>(responseBody)
     printfn "Deserialized trades: %A" trades
+    
+    match trades.result |> Map.tryFind order.OrderId with
+    | Some orderResult ->
+        let fulfilledAmount = decimal orderResult.vol_exec
+        let remainingAmount = order.Amount - fulfilledAmount
+        let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
 
-    let fulfilledAmount = trades |> List.sumBy (fun trade -> decimal trade.result.vol_exec)
-    let remainingAmount = order.Amount - fulfilledAmount
-    let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+        let orderStatus = {
+            OrderId = order.OrderId
+            FulfilledAmount = fulfilledAmount
+            RemainingAmount = remainingAmount
+            Status = status
+        }
 
-    let orderStatus = {
-        OrderId = order.OrderId
-        FulfilledAmount = fulfilledAmount
-        RemainingAmount = remainingAmount
-        Status = status
-    }
-
-    printfn $"Retrieved Kraken order status: %A{orderStatus}"
-    return orderStatus
+        printfn $"Retrieved Kraken order status: %A{orderStatus}"
+        return orderStatus
 }
 
 let emitBitstampOrder (order: Order) : Task<Order> = task {
@@ -294,10 +295,10 @@ let retrieveBitstampOrderStatus (order: Order) : Task<OrderStatus> = task {
     let content = new StringContent(requestBody, Encoding.UTF8, "application/x-www-form-urlencoded")
 
     let! response = httpClient.PostAsync(bitstampRetrieveOrderStatusUrl, content)
-    printfn "Response Status Code: %d" (int response.StatusCode)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn "Received response body: %s" responseBody
     let statusResponse = JsonConvert.DeserializeObject<BitstampRetrieveOrderStatusResponse>(responseBody)
 
     let fulfilledAmount =

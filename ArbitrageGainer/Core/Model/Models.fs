@@ -196,7 +196,7 @@ type KrakenRetrieveOrderTradesResult = {
 
 type KrakenRetrieveOrderTradesResponse = {
     error: string list
-    result: KrakenRetrieveOrderTradesResult
+    result: Map<string, KrakenRetrieveOrderTradesResult>
 }
 
 type BitstampEmitOrderRequest = {
