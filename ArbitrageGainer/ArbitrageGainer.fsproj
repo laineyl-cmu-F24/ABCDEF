@@ -13,6 +13,7 @@
         <Compile Include="Service\ApplicationService\Cache.fs" />
         <Compile Include="Service\ApplicationService\Workflow.fs" />
         <Compile Include="Service\ApplicationService\Logger.fs" />
+        <Content Include="Service\ApplicationService\log.txt" />
         <Compile Include="Infrastructure\Repository\DatabaseInterface.fs" />
         <Compile Include="Infrastructure\Client\ModuleAPI.fs" />
         <Compile Include="Service\ApplicationService\OrderManagement.fs" />

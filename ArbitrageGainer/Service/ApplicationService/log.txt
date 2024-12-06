@@ -1,0 +1,5 @@
+2024-12-05 17:10:09:909 - Historical Arbitrage Analysis - Started called
+2024-12-05 17:10:10:551 - Historical Arbitrage Saving to DB called
+2024-12-05 17:10:12:032 - Historical Arbitrage Saving to DB called
+2024-12-05 17:10:12:186 - Historical Arbitrage Saving to DB called
+2024-12-05 17:10:12:264 - Historical Arbitrage Saving to DB called
