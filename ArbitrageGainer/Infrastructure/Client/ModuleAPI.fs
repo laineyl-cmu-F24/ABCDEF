@@ -148,7 +148,8 @@ let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
 //let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
 //let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_order/"
 let bistampEmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/api/v2/:orderSide/market/:currencyPair/" 
-let bitstampRetrieveOrderStatusUrl = "https://www.bitstamp.net/api/v2/order_status/"
+//let bitstampRetrieveOrderStatusUrl = "https://www.bitstamp.net/api/v2/order_status/"
+let bitstampRetrieveOrderStatusUrl = "https://one8656-testing-server.onrender.com/order/status/api/v2/order_status/" 
 
 let submitBitfinexOrder (order: Order) : Task<Order> = task {
     let requestBody = {
@@ -159,7 +160,6 @@ let submitBitfinexOrder (order: Order) : Task<Order> = task {
         side = match order.Side with | Buy -> "buy" | Sell -> "sell"
         ``type`` = "MARKET"
     }
-    //let requestBody = sprintf "type=%s&symbol=%s&amount=%s&price=%s" "MARKET" "tDOTUSD" "150.0" "5.2529"
 
     let json = JsonConvert.SerializeObject(requestBody)
     let content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -233,15 +233,18 @@ let submitKrakenOrder (order: Order) : Task<Order> = task {
 }
 
 let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
-    let requestBody = { txid = [ order.OrderId ] }
-    let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/json")
+    let requestBody = sprintf "nonce=%i&txid=%s&trades=%b" 1 order.OrderId true
+
+    let content = new StringContent(requestBody, Encoding.UTF8, "application/x-www-form-urlencoded")
 
     let! response = httpClient.PostAsync(krakenQueryOrderInfoUrl, content)
+    printfn "Response Status Code: %d" (int response.StatusCode)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn "Received response body: %s" responseBody
     let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse list>(responseBody)
+    printfn "Deserialized trades: %A" trades
 
     let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
     let remainingAmount = order.Amount - fulfilledAmount
@@ -254,7 +257,7 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
         Status = status
     }
 
-    printfn $"Retrieved Bitfinex order status: %A{orderStatus}"
+    printfn $"Retrieved Kraken order status: %A{orderStatus}"
     return orderStatus
 }
 
@@ -286,9 +289,11 @@ let emitBitstampOrder (order: Order) : Task<Order> = task {
 }
 
 let retrieveBitstampOrderStatus (order: Order) : Task<OrderStatus> = task {
-    let url = $"{bitstampRetrieveOrderStatusUrl}{order.OrderId}/"
+    let requestBody = sprintf "id=%s" order.OrderId
+    let content = new StringContent(requestBody, Encoding.UTF8, "application/x-www-form-urlencoded")
 
-    let! response = httpClient.GetAsync(url)
+    let! response = httpClient.PostAsync(bitstampRetrieveOrderStatusUrl, content)
+    printfn "Response Status Code: %d" (int response.StatusCode)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
