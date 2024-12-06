@@ -136,6 +136,9 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
             submitKrakenOrder buyOrder
         | Bitstamp ->
             emitBitstampOrder buyOrder
+        | _ ->
+            printfn $"Unexpected exchange: %A{buyOrder.Exchange}"
+            raise (Exception "Unknown exchange")
 
     printfn $"Submitted Buy Order: %A{submittedBuyOrder}"
 

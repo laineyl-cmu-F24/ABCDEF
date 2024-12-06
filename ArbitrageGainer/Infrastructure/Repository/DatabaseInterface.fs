@@ -3,7 +3,6 @@ open System
 open MongoDB.Driver
 open MongoDB.Bson
 open Core.Model.Models
-open Logging.Logger
 
 
 // DB item definition
@@ -74,3 +73,18 @@ let getTransactionWithinTime (startTime:DateTime) (endTime:DateTime) =
             Builders<Transaction>.Filter.Lte((fun t -> t.Timestamp), endTime)
         )
     tryDbOperation (fun () -> transactionCollection.Find(filter).ToList()) ()
+    
+let historicalArbitrageOpportunity = db.GetCollection<TradeRecord>("historicalArbitrageOpportunities")
+
+let saveHistoricalArbitrageOpportunity (opportunity: TradeRecord) =
+    try
+        historicalArbitrageOpportunity.InsertOne(opportunity)
+        Ok ()
+    with
+    | ex -> Error (DatabaseError ex.Message)
+
+let getHistoricalOpportunity () =
+    historicalArbitrageOpportunity
+        .Find(Builders<TradeRecord>.Filter.Empty)
+        .ToList()
+    |> Seq.toList

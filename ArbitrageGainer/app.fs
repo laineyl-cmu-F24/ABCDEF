@@ -5,6 +5,7 @@ open Suave
 open Suave.Operators
 open Suave.Filters
 open MongoDB.Driver
+open MongoDB.Bson
 
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
@@ -14,7 +15,6 @@ open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Service.ApplicationService.Toggle
 open Logging.Logger
-
 
 type SystemState = {
     TradingParams: TradingParameters option
@@ -30,9 +30,19 @@ type AgentMessage =
     | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
     | ToggleTrading of bool * Option<unit -> Async<DomainResult<unit>>> * AsyncReplyChannel<SystemState>
     
+let tradingParams: TradingParameters option = Some {
+    NumOfCrypto = 5
+    MinSpreadPrice = 0.05M
+    MinTransactionProfit = 5.0M
+    MaxTransactionValue = 2000.0M
+    MaxTradeValue = 5000.0M
+    InitialInvestmentAmount = 0.0M 
+    Email = None
+    PnLThreshold = None
+}
     
 let initialState = {
-    TradingParams = None
+    TradingParams = tradingParams
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc =  None
@@ -110,22 +120,18 @@ let getHistoricalArbitrage (context: HttpContext) =
                     let tradeRecords =
                         result
                         |> Seq.map (fun (pair, opportunityCount) ->
-                            { Pair =  pair; OpportunityCount = opportunityCount }
+                            { Id = ObjectId.GenerateNewId(); Pair =  pair; OpportunityCount = opportunityCount }
                         )
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)
                     // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
-                    logger "Historical Arbitrage Analysis - End"
                     return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
                 with
                 | ex ->
-                    logger "Historical Arbitrage Analysis - Failed to End Normally"
                     return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
             | _ ->
-                logger "Historical Arbitrage Analysis - End: Failed"
                 return (RequestErrors.NOT_FOUND "Error\n", "File not found")
         | _ ->
-            logger "Historical Arbitrage Analysis - End: Failed"
             return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
     }
     
@@ -138,7 +144,7 @@ let getCrossTradeCurrencyPairs (context: HttpContext) =
             return (Successful.OK "Success\n", $"Got cross-trade currency pairs: %A{currencyPair}")
         with
         | ex ->
-            logger "Get Cross Currency Pair - Start: Failed"
+            logger "Get Cross Currency Pair - Failed to Start"
             return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: %s{ex.Message}")
     }
     
