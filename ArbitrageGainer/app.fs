@@ -127,7 +127,8 @@ let getHistoricalArbitrage (context: HttpContext) =
         // Define the file path for historicalData.txt
         let filePath = Path.Combine(__SOURCE_DIRECTORY__, "historicalData.txt")
         
-        if File.Exists filePath then
+        match File.Exists filePath with
+        | true ->
             try
                 let result = calculateHistoricalArbitrage filePath
                 let tradeRecords =
@@ -141,7 +142,7 @@ let getHistoricalArbitrage (context: HttpContext) =
             with
             | ex ->
                 return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
-        else
+        | false ->
             return (RequestErrors.NOT_FOUND "Error\n", "historicalData.txt not found")
     }
 
