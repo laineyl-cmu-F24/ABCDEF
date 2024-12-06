@@ -1,4 +1,4 @@
-module ArbitrageGainer.Infrastructure.Client.EmailClient
+module Infrastructure.Client.EmailClient
 
 open System.Net
 open System.Net.Mail

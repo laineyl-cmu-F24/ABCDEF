@@ -11,6 +11,7 @@ open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
 open Logging.Logger
 
+
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
         match orderStatus.Status with
          
@@ -29,6 +30,22 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             printfn $"Transaction stored: %A{transaction}"
             addTransaction transaction
             printfn "Transaction added to PNL"
+            
+            let! currentState = getTradingState ()
+            let threshold =
+                match currentState.TradingParams with
+                | Some tp -> tp.PnLThreshold
+                | None -> failwith "Trading parameters are not available."
+                
+            match threshold with
+                | Some t ->
+                    let! curr = getCurrentPnL ()
+                    match curr >= t with
+                        | true -> pnLEvent.Trigger(ThresholdExceeded)
+                        | false -> printfn "Current PnL within threshold"
+                    return ()
+                | None -> printfn "No threshold set"
+            return ()
         | "PartiallyFilled" ->
             let transaction = {
                 Id = ObjectId.GenerateNewId().ToString()

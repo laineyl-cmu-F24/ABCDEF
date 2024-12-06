@@ -15,6 +15,7 @@ open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Service.ApplicationService.Toggle
+open Infrastructure.Client.EmailClient
 open Logging.Logger
 
 type SystemState = {
@@ -63,6 +64,18 @@ let handleEmptyRequest func =
             let! response, _ = func ()
             return! response context
         }
+        
+let handlePnLEvent (event: PnLEvent) =
+    match event with
+    | ThresholdExceeded ->
+        let res = toggleTrading
+        printfn "Exceeding threshold. Trading Stopper"
+        sendEmail "pkotchav@andrew.cmu.edu" "Arbitrage Gainer" "Threshold is exceeded."
+    | TradingStopped ->
+        printfn "Trading Already Stopped"
+
+// Subscribe the event handler
+onPnLEvent.Add(handlePnLEvent)
 
 let setTradingParameters  (context: HttpContext) =
     async {
@@ -191,7 +204,7 @@ let app =
     ]
 
 
-startWebServer defaultConfig app
+startWebServer { defaultConfig with bindings = [ HttpBinding.createSimple HTTP "0.0.0.0" 8080  ] } app
 
 
 
