@@ -4,6 +4,13 @@ open MongoDB.Driver
 open MongoDB.Bson
 open FSharp.Data
 
+type PnLEvent =
+    | ThresholdExceeded
+    | TradingStopped
+
+let pnLEvent = Event<PnLEvent>()
+let onPnLEvent = pnLEvent.Publish
+
 type TradeRecord = {
     Id: ObjectId
     Pair: string

@@ -62,6 +62,17 @@ let handleEmptyRequest func =
             let! response, _ = func ()
             return! response context
         }
+        
+let handlePnLEvent (event: PnLEvent) =
+    match event with
+    | ThresholdExceeded ->
+        let res = toggleTrading
+        printfn "Exceeding threshold. Trading Stopper"
+    | TradingStopped ->
+        printfn "Trading Already Stopped"
+
+// Subscribe the event handler
+onPnLEvent.Add(handlePnLEvent)
 
 let setTradingParameters  (context: HttpContext) =
     async {

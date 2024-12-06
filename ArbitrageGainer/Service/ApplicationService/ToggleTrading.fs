@@ -5,7 +5,6 @@ open Suave
 open MongoDB.Driver
 open Core.Model.Models
 open Infrastructure.Client.WebSocketClient
-open Service.ApplicationService.CrossTradedCurrencyPair
 open Service.ApplicationService.Workflow
 open Service.ApplicationService.MarketData
 open  Service.ApplicationService.TradingAgent
