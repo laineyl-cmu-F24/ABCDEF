@@ -4,6 +4,7 @@ open System.IO
 open Core.Model.Models
 open MongoDB.Bson
 open Infrastructure.Repository.DatabaseInterface
+open Logging.Logger
 
 type HistoricalData =
     JsonProvider<
@@ -89,8 +90,9 @@ let calculateHistoricalArbitrage file=
         printfn $"{pair}, {opportunities} opportunities"
         
         let opportunity = { Id = ObjectId.GenerateNewId(); Pair = pair; OpportunityCount = opportunities }
+        createLogger "Historical Arbitrage Saving to DB"
         match saveHistoricalArbitrageOpportunity opportunity with
-        | Ok _ -> printfn $"Successfully saved opportunity for %s{pair}"
-        | _ -> printfn $"Error saving opportunity for %s{pair}"
+            | Ok _ -> printfn $"Successfully saved opportunity for %s{pair}"
+            | _ -> printfn $"Error saving opportunity for %s{pair}"
     )
     reduceResult

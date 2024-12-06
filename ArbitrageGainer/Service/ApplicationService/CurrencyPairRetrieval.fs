@@ -4,6 +4,7 @@ open System
 open Core.Model.Models
 open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
+open Logging.Logger
 
 let findCrossTradedPairs (bitfinexPairs: seq<string>) (bitstampPairs: seq<string>) (krakenPairs: seq<string>) =
     // Convert each sequence to a set for efficient comparison
@@ -26,6 +27,8 @@ let findCurrencyPairs =
                 let processedKrakenPairs = processKrakenPairs krakenParseResult
                 let res = findCrossTradedPairs processedBitfinexPairs processedBitstampPairs processedKrakenPairs
                 res |> Seq.iter (fun pairName ->
+                        let logger = createLogger
+                        logger "Currency Pair Saving to DB"
                         match createCurrencyPair pairName with
                             | Ok _ -> ()
                             | Error err -> printfn "Failed to save currency pair: %s. Error: %A" pairName err
@@ -38,14 +41,3 @@ let findCurrencyPairs =
     | Error _ ->
         printfn "Cross-currency pair processing error"
         Seq.empty
-
-
-
-
-    
-    
-    
-
-
-
-

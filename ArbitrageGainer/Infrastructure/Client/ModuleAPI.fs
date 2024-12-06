@@ -11,6 +11,7 @@ open Core.Model.Models
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open Logging.Logger
 
 let httpClient = new HttpClient()
 
@@ -209,7 +210,10 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
     let remainingAmount = order.Amount - fulfilledAmount
-    let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+    let status =
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ ->"PartiallyFilled"
 
     let orderStatus = {
         OrderId = order.OrderId
@@ -245,6 +249,7 @@ let submitKrakenOrder (order: Order) : Task<Order> = task {
 
     let orderId = List.head submitResponse.result.txid
     let updatedOrder = { order with OrderId = orderId }
+
     let result = saveOrder updatedOrder
     printfn $"Submitted Kraken order: %A{updatedOrder}"
     return updatedOrder
@@ -268,6 +273,14 @@ let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
         let fulfilledAmount = decimal orderResult.vol_exec
         let remainingAmount = order.Amount - fulfilledAmount
         let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+    let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse list>(responseBody)
+
+    let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
+    let remainingAmount = order.Amount - fulfilledAmount
+    let status =
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ -> "PartiallyFilled"
 
         let orderStatus = {
             OrderId = order.OrderId
@@ -302,6 +315,7 @@ let emitBitstampOrder (order: Order) : Task<Order> = task {
     let emitResponse = JsonConvert.DeserializeObject<BitstampEmitOrderResponse>(responseBody)
 
     let updatedOrder = { order with OrderId = emitResponse.id }
+
     let result = saveOrder updatedOrder
     printfn $"Emitted Bitstamp order: %A{updatedOrder}"
     return updatedOrder
@@ -326,9 +340,11 @@ let retrieveBitstampOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let remainingAmount = statusResponse.amount - fulfilledAmount
     let status =
-        if remainingAmount = 0m then "FullyFilled"
-        elif fulfilledAmount > 0m then "PartiallyFilled"
-        else "Unfilled"
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ -> match fulfilledAmount > 0m with
+                | true ->  "PartiallyFilled"
+                | _ -> "Unfilled"
 
     let orderStatus = {
         OrderId = order.OrderId

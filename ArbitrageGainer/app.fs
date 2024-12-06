@@ -16,6 +16,7 @@ open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Service.ApplicationService.Toggle
 open Infrastructure.Client.EmailClient
+open Logging.Logger
 
 type SystemState = {
     TradingParams: TradingParameters option
@@ -120,6 +121,8 @@ let getTradingParameters  (context: HttpContext) =
     
 let getHistoricalArbitrage (context: HttpContext) =
     async {
+        let logger = createLogger
+        logger "Historical Arbitrage Analysis - Started"
         let req = context.request
         match req.formData "file" with
         | Choice1Of2 filePath ->
@@ -136,22 +139,26 @@ let getHistoricalArbitrage (context: HttpContext) =
                         |> Seq.toList
                     let history = SetTradeHistory (tradeRecords)
                     // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply))
-                    printfn $"Got historical arbitrage %A{result}"
                     return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
                 with
                 | ex ->
                     return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
-            | _ -> return (RequestErrors.NOT_FOUND "Error\n", "File not found")
-        | _ -> return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
+            | _ ->
+                return (RequestErrors.NOT_FOUND "Error\n", "File not found")
+        | _ ->
+            return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
     }
     
 let getCrossTradeCurrencyPairs (context: HttpContext) =
     async {
+        let logger = createLogger
         try
+            logger "Get Cross Currency Pair - Started"
             let currencyPair = findCurrencyPairs
             return (Successful.OK "Success\n", $"Got cross-trade currency pairs: %A{currencyPair}")
         with
         | ex ->
+            logger "Get Cross Currency Pair - Failed to Start"
             return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: %s{ex.Message}")
     }
     

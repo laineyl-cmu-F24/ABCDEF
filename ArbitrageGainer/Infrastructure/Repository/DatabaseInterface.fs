@@ -32,7 +32,6 @@ let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 // let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 let createCurrencyPair (pairName: string) =
     try
-        // printfn "received name %A" pairName
         let newCurrencyPair = { Id = ObjectId.GenerateNewId(); name = pairName }
         let _ = currencyPairsCollection.InsertOne(newCurrencyPair)
         // printfn "Inserted currency pair: %A" createRes
@@ -100,5 +99,6 @@ let getHistoricalOpportunity () =
         .Find(Builders<TradeRecord>.Filter.Empty)
         .ToList()
     |> Seq.toList
+
 
     

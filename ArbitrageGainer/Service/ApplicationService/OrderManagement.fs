@@ -9,6 +9,7 @@ open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
 open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
+open Logging.Logger
 
 
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
@@ -78,10 +79,13 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             let! submittedOrder =
                 match order.Exchange with
                 | Bitfinex ->
+                    createLogger "New Order Emitted to Bitfinex"
                     submitBitfinexOrder newOrder
                 | Kraken ->
+                    createLogger "New Order Emitted to Kraken"
                     submitKrakenOrder newOrder
                 | Bitstamp ->
+                    createLogger "New Order Emitted to Bitstamp"
                     emitBitstampOrder newOrder
                     
             return ()
@@ -112,11 +116,12 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let totalTransactionValue = buyTotal + sellTotal
 
     let adjustedAmount =
-        if totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE then
+        match totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE with
+        | true ->
             // Adjust the amount to fit within the max total transaction value
             let allowedAmount = MAX_TOTAL_TRANSACTION_VALUE / (buyPrice + sellPrice)
             Math.Floor(allowedAmount * 10000m) / 10000m // Round down to 4 decimal places
-        else
+        | _ ->
             desiredAmount
 
     // Ensure final amount respects available amounts on both exchanges
@@ -152,14 +157,14 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let! submittedBuyOrder =
         match buyOrder.Exchange with
         | Bitfinex ->
+            createLogger "Buy Order Submitted to Bitfinex"
             submitBitfinexOrder buyOrder
         | Kraken ->
+            createLogger "Buy Order Submitted to Kraken"
             submitKrakenOrder buyOrder
         | Bitstamp ->
+            createLogger "Buy Order Submitted to Bitstamp"
             emitBitstampOrder buyOrder
-        | _ ->
-            printfn $"Unexpected exchange: %A{buyOrder.Exchange}"
-            raise (Exception "Unknown exchange")
 
     printfn $"Submitted Buy Order: %A{submittedBuyOrder}"
 
@@ -167,10 +172,13 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let! submittedSellOrder =
         match sellOrder.Exchange with
         | Bitfinex ->
+            createLogger "Sell Order Submitted to Bitfinex"
             submitBitfinexOrder sellOrder
         | Kraken ->
+            createLogger "Sell Order Submitted to Kraken"
             submitKrakenOrder sellOrder
         | Bitstamp ->
+            createLogger "Sell Order Submitted to Bitstamp"
             emitBitstampOrder sellOrder
 
     printfn $"Submitted Sell Order: %A{submittedSellOrder}"
