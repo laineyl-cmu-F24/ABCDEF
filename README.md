@@ -19,7 +19,7 @@
          - Examples:
             - `executeTrades` leverage F#'s async workflows to place buy and sell orders concurrently.
             - `getOrderStatus`: Order status retrieval is parallelized, reducing latency in critical operations.
-      - Events like `ThresholdExceeded` are handled asynchronously to trigger appropriate system actions without blocking ongoing operations.
+            - Events like `ThresholdExceeded` are handled asynchronously to trigger appropriate system actions without blocking ongoing operations.
 
 ## Leveraging F# Features
    1. **Pattern Matching:** Extensively used for conditional logic (e.g., checking spread validity, determining exchange names), simplifying the codebase and reducing errors.
