@@ -30,7 +30,6 @@
         <Compile Include="Service\ApplicationService\ToggleTrading.fs" />
         
         <Compile Include="app.fs" />
-        <Content Include="README.md" />
     </ItemGroup>
     
     <!-- Dependencies -->
@@ -46,7 +45,6 @@
 
     <!-- Additional Content -->
     <ItemGroup>
-        <Content Include="README.md" />
         <EmbeddedResource Remove="src\**" />
     </ItemGroup>
 
