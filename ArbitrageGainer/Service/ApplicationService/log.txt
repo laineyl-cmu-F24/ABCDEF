@@ -1,0 +1,48 @@
+2024-12-07 23:17:36:809 - Toggle Trading - Started called
+2024-12-07 23:17:44:217 - Buy Order Submitted to Bitstamp called
+2024-12-07 23:17:45:450 - Sell Order Submitted to Kraken called
+2024-12-07 23:17:46:008 - New Order Emitted to Kraken called
+2024-12-07 23:17:49:032 - Buy Order Submitted to Bitfinex called
+2024-12-07 23:17:49:230 - Sell Order Submitted to Bitstamp called
+2024-12-08 00:04:40:054 - Historical Arbitrage Analysis - Started called
+2024-12-08 00:04:41:239 - Historical Arbitrage Saving to DB called
+2024-12-08 00:04:43:425 - Historical Arbitrage Saving to DB called
+2024-12-08 00:04:43:507 - Historical Arbitrage Saving to DB called
+2024-12-08 00:04:43:583 - Historical Arbitrage Saving to DB called
+2024-12-08 00:05:37:383 - Historical Arbitrage Analysis - Started called
+2024-12-08 00:05:38:471 - Historical Arbitrage Saving to DB called
+2024-12-08 00:05:38:562 - Historical Arbitrage Saving to DB called
+2024-12-08 00:05:38:720 - Historical Arbitrage Saving to DB called
+2024-12-08 00:05:38:798 - Historical Arbitrage Saving to DB called
+2024-12-08 10:42:08:126 - Toggle Trading - Started called
+2024-12-08 10:42:15:595 - Buy Order Submitted to Bitstamp called
+2024-12-08 10:42:59:321 - Toggle Trading - Started called
+2024-12-08 10:43:06:621 - Buy Order Submitted to Bitstamp called
+2024-12-08 10:43:08:702 - Sell Order Submitted to Kraken called
+2024-12-08 10:43:09:290 - New Order Emitted to Kraken called
+2024-12-08 10:43:11:721 - Buy Order Submitted to Bitfinex called
+2024-12-08 10:43:11:913 - Sell Order Submitted to Bitstamp called
+2024-12-08 10:54:39:448 - Toggle Trading - Started called
+2024-12-08 10:54:46:803 - Buy Order Submitted to Bitstamp called
+2024-12-08 10:54:48:326 - Sell Order Submitted to Kraken called
+2024-12-08 10:54:48:912 - New Order Emitted to Kraken called
+2024-12-08 10:54:51:792 - Buy Order Submitted to Bitfinex called
+2024-12-08 10:54:52:121 - Sell Order Submitted to Bitstamp called
+2024-12-08 11:00:49:208 - Toggle Trading - Started called
+2024-12-08 11:00:56:536 - Buy Order Submitted to Bitstamp called
+2024-12-08 11:00:58:660 - Sell Order Submitted to Kraken called
+2024-12-08 11:00:59:505 - New Order Emitted to Kraken called
+2024-12-08 11:01:01:515 - Buy Order Submitted to Bitfinex called
+2024-12-08 11:01:01:759 - Sell Order Submitted to Bitstamp called
+2024-12-08 11:25:44:135 - Toggle Trading - Started called
+2024-12-08 11:25:51:722 - Buy Order Submitted to Bitstamp called
+2024-12-08 11:26:24:624 - Sell Order Submitted to Kraken called
+2024-12-08 11:26:25:625 - New Order Emitted to Kraken called
+2024-12-08 11:26:25:844 - Buy Order Submitted to Bitfinex called
+2024-12-08 11:26:26:032 - Sell Order Submitted to Bitstamp called
+2024-12-08 12:02:24:140 - Toggle Trading - Started called
+2024-12-08 12:02:31:585 - Buy Order Submitted to Bitstamp called
+2024-12-08 12:03:04:411 - Sell Order Submitted to Kraken called
+2024-12-08 12:03:05:234 - New Order Emitted to Kraken called
+2024-12-08 12:03:05:414 - Buy Order Submitted to Bitfinex called
+2024-12-08 12:03:05:648 - Sell Order Submitted to Bitstamp called

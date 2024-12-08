@@ -16,7 +16,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
         match orderStatus.Status with
          
         | "FullyFilled" ->
-            let transaction = {
+            let transaction:Transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
                 OrderId = orderStatus.OrderId
                 Exchange = order.Exchange
@@ -27,7 +27,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
                 Timestamp = DateTime.UtcNow
             }
             let result = saveTransaction transaction
-            printfn $"Transaction stored: %A{transaction}"
+            printfn $"Transaction stored: %A{transaction}, DB result = %A{result}"
             addTransaction transaction
             printfn "Transaction added to PNL"
             
@@ -47,7 +47,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
                 | None -> printfn "No threshold set"
             return ()
         | "PartiallyFilled" ->
-            let transaction = {
+            let transaction:Transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
                 OrderId = orderStatus.OrderId
                 Exchange = order.Exchange
@@ -58,7 +58,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
                 Timestamp = DateTime.UtcNow
             }
             let result = saveTransaction transaction
-            printfn $"Partial transaction stored: %A{transaction}"
+            printfn $"Partial transaction stored: %A{transaction}, DB result = %A{result}"
             addTransaction transaction
             printfn "Transaction added to PNL"
 

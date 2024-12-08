@@ -125,7 +125,7 @@ let getHistoricalArbitrage (context: HttpContext) =
         logger "Historical Arbitrage Analysis - Started"
         
         // Define the file path for historicalData.txt
-        let filePath = Path.Combine(__SOURCE_DIRECTORY__, "historicalData.txt")
+        let filePath = Path.Combine("/app", "historicalData.txt")
         
         match File.Exists filePath with
         | true ->
@@ -141,8 +141,10 @@ let getHistoricalArbitrage (context: HttpContext) =
                 return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
             with
             | ex ->
+                printfn $"Failed to get historical arbitrage: %s{ex.Message}"
                 return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
         | false ->
+            printfn "historicalData.txt not found"
             return (RequestErrors.NOT_FOUND "Error\n", "historicalData.txt not found")
     }
 
@@ -188,6 +190,40 @@ let getCurrPnl (context: HttpContext) =
             return (RequestErrors.BAD_REQUEST "Error", "Error retrieving pnl")
         
     }
+let tryParseDateTime (dateTimeStr: string) =
+    match DateTime.TryParse(dateTimeStr) with
+    | true, value -> Some value
+    | false, _ -> None
+    
+let dateTimeToDecimal (dateTime: DateTime) =
+    let epoch = DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+    let timeSpan = dateTime.ToUniversalTime() - epoch
+    timeSpan.TotalDays
+    
+let getHistoricalPnl (startDateTimeStr, endDateTimeStr): WebPart =
+    fun ctx ->
+        async {
+            match tryParseDateTime startDateTimeStr, tryParseDateTime endDateTimeStr with
+            | Some startDateTime, Some endDateTime ->
+                // Call the asynchronous function
+                let! res = getHistoricalPnLWithIn startDateTime endDateTime
+
+                // Prepare the response
+                let msg = sprintf "Start: %s, End: %s, Result: %A" startDateTimeStr endDateTimeStr res
+                return! Successful.OK msg ctx
+            | _ ->
+                return! RequestErrors.BAD_REQUEST "Invalid date format or date range." ctx
+        }
+
+
+    // Successful.OK (sprintf "Start: %s, End: %s" startDateTimeStr endDateTimeStr)
+
+let handleRequestGet func =
+    fun (context: HttpContext) ->
+        async {
+            let! webPart, _ = func context
+            return! webPart context
+        }
 
 let app =
     choose [
@@ -199,6 +235,7 @@ let app =
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
         POST >=> path "/api/pnl" >=> handleRequest togglePnL
         GET >=> path "/api/current-pnl" >=> handleRequest getCurrPnl
+        GET >=> pathScan "/api/historical-pnl/%s/%s" (fun start end_ -> getHistoricalPnl start end_)
     ]
 
 

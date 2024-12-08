@@ -63,4 +63,11 @@
         <Content Include="historicalData.txt" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="historicalData.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+
 </Project>
