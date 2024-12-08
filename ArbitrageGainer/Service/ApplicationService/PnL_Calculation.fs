@@ -30,6 +30,7 @@ type PnLMessage =
 
 // Calculate the P&L of a transaction
 let calculatePLofTransaction (transaction: Transaction) =
+    printfn "calculating pnl of: %A" transaction
     match transaction.Side with
     | Sell -> transaction.Amount * transaction.Price
     | Buy -> -transaction.Amount * transaction.Price
