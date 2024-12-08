@@ -89,10 +89,10 @@ let calculateHistoricalArbitrage file=
     reduceResult |> Seq.iter(fun (pair, opportunities) ->
         printfn $"{pair}, {opportunities} opportunities"
         
-        let opportunity = { Id = ObjectId.GenerateNewId(); Pair = pair; OpportunityCount = opportunities }
+        //let opportunity = { Id = ObjectId.GenerateNewId(); Pair = pair; OpportunityCount = opportunities }
         createLogger "Historical Arbitrage Saving to DB"
-        match saveHistoricalArbitrageOpportunity opportunity with
-            | Ok _ -> printfn $"Successfully saved opportunity for %s{pair}"
-            | _ -> printfn $"Error saving opportunity for %s{pair}"
+        //match saveHistoricalArbitrageOpportunity opportunity with
+          //  | Ok _ -> printfn $"Successfully saved opportunity for %s{pair}"
+            //| _ -> printfn $"Error saving opportunity for %s{pair}"
     )
     reduceResult

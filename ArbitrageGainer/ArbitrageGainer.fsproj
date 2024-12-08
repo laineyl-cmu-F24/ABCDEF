@@ -28,6 +28,8 @@
         <Compile Include="Service\ApplicationService\Metric.fs" />
         <Compile Include="Service\ApplicationService\CurrencyPairRetrieval.fs" />
         <Compile Include="Service\ApplicationService\ToggleTrading.fs" />
+        <Compile Include="Service\ApplicationService\Mapper.fs" />
+        <Compile Include="Service\ApplicationService\Reducer.fs" />
         
         <Compile Include="app.fs" />
     </ItemGroup>
