@@ -8,6 +8,10 @@ open System.Threading.Tasks
 open Newtonsoft.Json
 open Infrastructure.Repository.DatabaseInterface
 open Core.Model.Models
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
+
+open Logging.Logger
 
 let httpClient = new HttpClient()
 
@@ -135,36 +139,53 @@ let processKrakenPairs (krakenData: seq<KrakenElem.Root option>) =
     |> Seq.filter (fun converted -> converted <> "")
     |> Seq.distinct
 
-let bitfinexSubmitOrderUrl = "https://api.bitfinex.com/v2/auth/w/order/submit"
+//let bitfinexSubmitOrderUrl = "https://api.bitfinex.com/v2/auth/w/order/submit"
+let bitfinexSubmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/v2/auth/w/order/submit"
+
 let bitfinexRetrieveOrderTradesUrl = "https://api.bitfinex.com/v2/auth/r/order/{symbol}:{id}/trades"
 
-let krakenSubmitOrderUrl = "https://api.kraken.com/0/private/AddOrder"
-let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
+//let krakenSubmitOrderUrl = "https://api.kraken.com/0/private/AddOrder"
+let krakenSubmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/0/private/AddOrder"
 
-let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
-let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_order/"
-let bitstampRetrieveOrderStatusUrl = "https://www.bitstamp.net/api/v2/order_status/"
+//let krakenQueryOrderInfoUrl = "https://api.kraken.com/0/private/QueryOrders"
+let krakenQueryOrderInfoUrl = "https://one8656-testing-server.onrender.com/order/status/0/private/QueryOrders"
+
+//let bitstampEmitBuyOrderUrl = "https://www.bitstamp.net/api/v2/buy/market_order/"
+//let bitstampEmitSellOrderUrl = "https://www.bitstamp.net/api/v2/sell/market_order/"
+let bistampEmitOrderUrl = "https://one8656-testing-server.onrender.com/order/place/api/v2/:orderSide/market/:currencyPair/" 
+//let bitstampRetrieveOrderStatusUrl = "https://www.bitstamp.net/api/v2/order_status/"
+let bitstampRetrieveOrderStatusUrl = "https://one8656-testing-server.onrender.com/order/status/api/v2/order_status/" 
 
 let submitBitfinexOrder (order: Order) : Task<Order> = task {
     let requestBody = {
-        symbol = order.Symbol
+        symbol = "t" + order.Symbol.Replace("-", "").ToUpperInvariant()
         amount = order.Amount
         price = order.Price
         exchange = "bitfinex"
         side = match order.Side with | Buy -> "buy" | Sell -> "sell"
-        ``type`` = "exchange market"
+        ``type`` = "MARKET"
     }
 
     let json = JsonConvert.SerializeObject(requestBody)
     let content = new StringContent(json, Encoding.UTF8, "application/json")
-
+    
     let! response = httpClient.PostAsync(bitfinexSubmitOrderUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
-    let submitResponse = JsonConvert.DeserializeObject<BitfinexSubmitOrderResponse>(responseBody)
-
-    let updatedOrder = { order with OrderId = submitResponse.id }
+    
+    printfn $"Bitfinex Response body: %s{responseBody}"
+    let jArr = JArray.Parse(responseBody)
+    let mts = jArr.[0].Value<int64>()
+    let msgType = jArr.[1].Value<string>()
+    let messageId = jArr.[2].Value<int64>()
+    let status = jArr.[6].Value<string>()
+    let text = jArr.[7].Value<string>()
+    let ordersArray = jArr.[4] :?> JArray
+    let firstOrder = ordersArray.[0] :?> JArray
+    let extractedOrderId = firstOrder.[0].Value<string>()
+    
+    let updatedOrder = { order with OrderId = extractedOrderId }
     
     let result = saveOrder updatedOrder
     printfn $"Submitted Bitfinex order: %A{updatedOrder}"
@@ -172,7 +193,12 @@ let submitBitfinexOrder (order: Order) : Task<Order> = task {
 }
 
 let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
-    let requestBody = { order_id = order.OrderId }
+    let requestBody = 
+        sprintf "type=%s&symbol=%s&amount=%s&price=%s" 
+            "MARKET" 
+            order.Symbol 
+            (order.Amount.ToString("F1")) 
+            (order.Price.ToString("F4"))
     let json = JsonConvert.SerializeObject(requestBody)
     let content = new StringContent(json, Encoding.UTF8, "application/json")
 
@@ -184,7 +210,10 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
     let remainingAmount = order.Amount - fulfilledAmount
-    let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+    let status =
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ ->"PartiallyFilled"
 
     let orderStatus = {
         OrderId = order.OrderId
@@ -199,11 +228,12 @@ let retrieveBitfinexOrderStatus (order: Order) : Task<OrderStatus> = task {
 
 let submitKrakenOrder (order: Order) : Task<Order> = task {
     let requestBody = {
-        pair = order.Symbol
+        pair = "XX" + order.Symbol.Replace("-", "").ToUpperInvariant()
         ``type`` = match order.Side with | Buy -> "buy" | Sell -> "sell"
         ordertype = "market"
         volume = order.Amount
         price = order.Price
+        nonce = 1
     }
 
     let json = JsonConvert.SerializeObject(requestBody)
@@ -213,52 +243,62 @@ let submitKrakenOrder (order: Order) : Task<Order> = task {
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn $"Kraken Response body: %s{responseBody}"
     let submitResponse = JsonConvert.DeserializeObject<KrakenSubmitOrderResponse>(responseBody)
+    printfn $"Kraken Deserilized Response body: %s{responseBody}"
 
-    let orderId = List.head submitResponse.txid
+    let orderId = List.head submitResponse.result.txid
     let updatedOrder = { order with OrderId = orderId }
+
     let result = saveOrder updatedOrder
     printfn $"Submitted Kraken order: %A{updatedOrder}"
     return updatedOrder
 }
 
 let retrieveKrakenOrderStatus (order: Order) : Task<OrderStatus> = task {
-    let requestBody = { txid = [ order.OrderId ] }
-    let json = JsonConvert.SerializeObject(requestBody)
-    let content = new StringContent(json, Encoding.UTF8, "application/json")
+    let requestBody = sprintf "nonce=%i&txid=%s&trades=%b" 1 order.OrderId true
+
+    let content = new StringContent(requestBody, Encoding.UTF8, "application/x-www-form-urlencoded")
 
     let! response = httpClient.PostAsync(krakenQueryOrderInfoUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
-    let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse list>(responseBody)
+    printfn "Received response body: %s" responseBody
+    let trades = JsonConvert.DeserializeObject<KrakenRetrieveOrderTradesResponse>(responseBody)
+    printfn "Deserialized trades: %A" trades
+    
+    match trades.result |> Map.tryFind order.OrderId with
+    | Some orderResult ->
+        let fulfilledAmount = decimal orderResult.vol_exec
+        let remainingAmount = order.Amount - fulfilledAmount
+        let status =
+            match remainingAmount with
+            | 0m -> "FullyFilled"
+            | _ -> "PartiallyFilled"
 
-    let fulfilledAmount = trades |> List.sumBy (fun trade -> trade.amount)
-    let remainingAmount = order.Amount - fulfilledAmount
-    let status = if remainingAmount = 0m then "FullyFilled" else "PartiallyFilled"
+        let orderStatus = {
+            OrderId = order.OrderId
+            FulfilledAmount = fulfilledAmount
+            RemainingAmount = remainingAmount
+            Status = status
+        }
 
-    let orderStatus = {
-        OrderId = order.OrderId
-        FulfilledAmount = fulfilledAmount
-        RemainingAmount = remainingAmount
-        Status = status
-    }
-
-    printfn $"Retrieved Bitfinex order status: %A{orderStatus}"
-    return orderStatus
+        printfn $"Retrieved Kraken order status: %A{orderStatus}"
+        return orderStatus
 }
 
 let emitBitstampOrder (order: Order) : Task<Order> = task {
     let url =
-        match order.Side with
-        | Buy -> bitstampEmitBuyOrderUrl
-        | Sell -> bitstampEmitSellOrderUrl
-
+        bistampEmitOrderUrl
+        |> fun u -> u.Replace(":orderSide",  match order.Side with | Buy -> "buy" | Sell -> "sell")
+                        .Replace(":currencyPair", order.Symbol.Replace("-", "").ToLowerInvariant())
+        
     let requestBody = {
         amount = order.Amount
         price = order.Price
     }
-
+    
     let json = JsonConvert.SerializeObject(requestBody)
     let content = new StringContent(json, Encoding.UTF8, "application/json")
 
@@ -266,21 +306,25 @@ let emitBitstampOrder (order: Order) : Task<Order> = task {
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn $"Bitstamp Response body: %s{responseBody}"
     let emitResponse = JsonConvert.DeserializeObject<BitstampEmitOrderResponse>(responseBody)
 
     let updatedOrder = { order with OrderId = emitResponse.id }
+
     let result = saveOrder updatedOrder
     printfn $"Emitted Bitstamp order: %A{updatedOrder}"
     return updatedOrder
 }
 
 let retrieveBitstampOrderStatus (order: Order) : Task<OrderStatus> = task {
-    let url = $"{bitstampRetrieveOrderStatusUrl}{order.OrderId}/"
+    let requestBody = sprintf "id=%s" order.OrderId
+    let content = new StringContent(requestBody, Encoding.UTF8, "application/x-www-form-urlencoded")
 
-    let! response = httpClient.GetAsync(url)
+    let! response = httpClient.PostAsync(bitstampRetrieveOrderStatusUrl, content)
     response.EnsureSuccessStatusCode() |> ignore
 
     let! responseBody = response.Content.ReadAsStringAsync()
+    printfn "Received response body: %s" responseBody
     let statusResponse = JsonConvert.DeserializeObject<BitstampRetrieveOrderStatusResponse>(responseBody)
 
     let fulfilledAmount =
@@ -291,9 +335,11 @@ let retrieveBitstampOrderStatus (order: Order) : Task<OrderStatus> = task {
 
     let remainingAmount = statusResponse.amount - fulfilledAmount
     let status =
-        if remainingAmount = 0m then "FullyFilled"
-        elif fulfilledAmount > 0m then "PartiallyFilled"
-        else "Unfilled"
+        match remainingAmount with
+        | 0m -> "FullyFilled"
+        | _ -> match fulfilledAmount > 0m with
+                | true ->  "PartiallyFilled"
+                | _ -> "Unfilled"
 
     let orderStatus = {
         OrderId = order.OrderId

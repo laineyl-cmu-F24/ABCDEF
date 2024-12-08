@@ -1,8 +1,18 @@
 module Core.Model.Models
 open System
+open MongoDB.Driver
+open MongoDB.Bson
 open FSharp.Data
 
+type PnLEvent =
+    | ThresholdExceeded
+    | TradingStopped
+
+let pnLEvent = Event<PnLEvent>()
+let onPnLEvent = pnLEvent.Publish
+
 type TradeRecord = {
+    Id: ObjectId
     Pair: string
     OpportunityCount: int
 }
@@ -89,6 +99,11 @@ type TradingParameters = {
     Email: string option
     PnLThreshold: decimal option
 }
+
+type HistoricalArbitrageOpportunity = {
+    Pair: string
+    Opportunity: int
+}
     
 type Side = Buy | Sell
 
@@ -170,21 +185,25 @@ type KrakenSubmitOrderRequest = {
     ordertype: string
     volume: decimal
     price: decimal
+    nonce: int
 }
 
-type KrakenSubmitOrderResponse = {
+type KrakenSubmitOrderResult = {
     txid: string list
 }
 
+type KrakenSubmitOrderResponse = {
+    error: string list
+    result: KrakenSubmitOrderResult
+}
+
+type KrakenRetrieveOrderTradesResult = {
+    vol_exec: string 
+}
+
 type KrakenRetrieveOrderTradesResponse = {
-    id: string
-    symbol: string
-    exchange: string
-    price: decimal
-    amount: decimal
-    timestamp: string
-    side: string
-    ``type``: string
+    error: string list
+    result: Map<string, KrakenRetrieveOrderTradesResult>
 }
 
 type BitstampEmitOrderRequest = {

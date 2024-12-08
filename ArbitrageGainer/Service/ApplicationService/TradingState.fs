@@ -2,7 +2,7 @@ module Service.ApplicationService.TradingState
 
 // Assuming these types are defined in your project
 open Core.Model.Models  // For TradingParameters, TradeRecord
-open Infrastructure.Client.WebSocketClient  // For DomainResult
+// open Infrastructure.Client.WebSocketClient  // For DomainResult
 
 /// Represents the overall system state
 type SystemState = {
@@ -28,8 +28,20 @@ type AgentMessage =
     | GetStartTradingTime of AsyncReplyChannel<int64 option>
 
 /// The initial state of the system
+
+let tradingParams: TradingParameters option = Some {
+    NumOfCrypto = 5
+    MinSpreadPrice = 0.05M
+    MinTransactionProfit = 5.0M
+    MaxTransactionValue = 2000.0M
+    MaxTradeValue = 5000.0M
+    InitialInvestmentAmount = 5000.0M 
+    Email = Some "pkotchav@andrew.cmu.edu"
+    PnLThreshold = None
+}
+
 let initialState = {
-    TradingParams = None
+    TradingParams = tradingParams
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc = None

@@ -1,10 +1,12 @@
 module app
 open System
 open System.IO
+open Microsoft.AspNetCore.Http.Features
 open Suave
 open Suave.Operators
 open Suave.Filters
 open MongoDB.Driver
+open MongoDB.Bson
 
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
@@ -13,7 +15,8 @@ open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
 open Core.Model.Models
 open Service.ApplicationService.Toggle
-
+open Infrastructure.Client.EmailClient
+open Logging.Logger
 
 type SystemState = {
     TradingParams: TradingParameters option
@@ -29,52 +32,24 @@ type AgentMessage =
     | GetTradeHistory of TradeRecord list * AsyncReplyChannel<SystemState>
     | ToggleTrading of bool * Option<unit -> Async<DomainResult<unit>>> * AsyncReplyChannel<SystemState>
     
+let tradingParams: TradingParameters option = Some {
+    NumOfCrypto = 5
+    MinSpreadPrice = 0.05M
+    MinTransactionProfit = 5.0M
+    MaxTransactionValue = 2000.0M
+    MaxTradeValue = 5000.0M
+    InitialInvestmentAmount = 0.0M 
+    Email = None
+    PnLThreshold = None
+}
     
 let initialState = {
-    TradingParams = None
+    TradingParams = tradingParams
     IsTradingActive = false
     TradeHistory = []
     WebSocketClientCloseFunc =  None
     StartTradingTime = None
 }
-
-let stateAgent = MailboxProcessor<AgentMessage>.Start(fun inbox ->
-    let rec loop state =
-        async {
-            let! message = inbox.Receive()
-            match message with
-            | SetTradingParameters (p, reply) ->
-                // printfn $"Current State: %A{state}"
-                let updatedState = { state with TradingParams = Some p }
-                reply.Reply(updatedState)
-                return! loop updatedState
-            | GetCurrentState reply ->
-                reply.Reply(state)
-                return! loop state
-            | GetTradeHistory (newTrades, reply) ->
-                let updatedState = { state with TradeHistory = newTrades }
-                reply.Reply(updatedState)
-                return! loop updatedState
-            | ToggleTrading (isActive, closeFuncOpt, reply) ->
-                let updatedState =
-                    match isActive with
-                    | true -> {
-                            state with
-                                IsTradingActive = isActive
-                                WebSocketClientCloseFunc =  closeFuncOpt
-                                StartTradingTime = Some (DateTimeOffset.Now.ToUnixTimeMilliseconds())
-                                }
-                    | false -> {
-                            state with
-                                 IsTradingActive = false
-                                 WebSocketClientCloseFunc = None
-                                 StartTradingTime = None // Clear start time
-                                 }
-                reply.Reply(updatedState)
-                return! loop updatedState
-        }
-    loop initialState
-)
 
 let handleRequest func =
     fun (context: HttpContext) ->
@@ -89,6 +64,18 @@ let handleEmptyRequest func =
             let! response, _ = func ()
             return! response context
         }
+        
+let handlePnLEvent (event: PnLEvent) =
+    match event with
+    | ThresholdExceeded ->
+        let res = toggleTrading
+        printfn "Exceeding threshold. Trading Stopper"
+        sendEmail "pkotchav@andrew.cmu.edu" "Arbitrage Gainer" "Threshold is exceeded."
+    | TradingStopped ->
+        printfn "Trading Already Stopped"
+
+// Subscribe the event handler
+onPnLEvent.Add(handlePnLEvent)
 
 let setTradingParameters  (context: HttpContext) =
     async {
@@ -134,37 +121,42 @@ let getTradingParameters  (context: HttpContext) =
     
 let getHistoricalArbitrage (context: HttpContext) =
     async {
-        let req = context.request
-        match req.formData "file" with
-        | Choice1Of2 filePath ->
-            // printfn $"Requested file path: %s{filePath}"
-            match filePath with
-            | filePath when File.Exists filePath ->
-                try
-                    let result = calculateHistoricalArbitrage filePath
-                    let tradeRecords =
-                        result
-                        |> Seq.map (fun (pair, opportunityCount) ->
-                            { Pair =  pair; OpportunityCount = opportunityCount }
-                        )
-                        |> Seq.toList
-                    let history = SetTradeHistory (tradeRecords)
-                    // let! updatedState = stateAgent.PostAndAsyncReply(fun reply -> GetTradeHistory(tradeRecords, reply)) 
-                    return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
-                with
-                | ex ->
-                    return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
-            | _ -> return (RequestErrors.NOT_FOUND "Error\n", "File not found")
-        | _ -> return (RequestErrors.BAD_REQUEST "Error\n", "No file path input")
+        let logger = createLogger
+        logger "Historical Arbitrage Analysis - Started"
+        
+        // Define the file path for historicalData.txt
+        let filePath = Path.Combine(__SOURCE_DIRECTORY__, "historicalData.txt")
+        
+        match File.Exists filePath with
+        | true ->
+            try
+                let result = calculateHistoricalArbitrage filePath
+                let tradeRecords =
+                    result
+                    |> Seq.map (fun (pair, opportunityCount) ->
+                        { Id = ObjectId.GenerateNewId(); Pair = pair; OpportunityCount = opportunityCount }
+                    )
+                    |> Seq.toList
+                let history = SetTradeHistory tradeRecords
+                return (Successful.OK "Success\n", $"Got historical arbitrage %A{result}")
+            with
+            | ex ->
+                return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get historical arbitrage: %s{ex.Message}")
+        | false ->
+            return (RequestErrors.NOT_FOUND "Error\n", "historicalData.txt not found")
     }
+
     
 let getCrossTradeCurrencyPairs (context: HttpContext) =
     async {
+        let logger = createLogger
         try
+            logger "Get Cross Currency Pair - Started"
             let currencyPair = findCurrencyPairs
             return (Successful.OK "Success\n", $"Got cross-trade currency pairs: %A{currencyPair}")
         with
         | ex ->
+            logger "Get Cross Currency Pair - Failed to Start"
             return (RequestErrors.BAD_REQUEST ex.Message, $"Failed to get currency pairs: %s{ex.Message}")
     }
     
@@ -175,13 +167,26 @@ let getAnnualReturn (context: HttpContext) =
         | Some tradingParams, startTimeOpt ->
             try
                 let initialAmount = tradingParams.InitialInvestmentAmount
-                let! pnlValue = getCurrentPnL
+                let! pnlValue = getCurrentPnL ()
                 let annualReturn = AnnualizedMetric initialAmount startTimeOpt pnlValue // Pass start time & pnl
                 return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
             with
             | ex -> return (RequestErrors.BAD_REQUEST "Error\n", $"Failed to get annual return: %s{ex.Message}")
 
         |_ -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
+    }
+    
+let getCurrPnl (context: HttpContext) =
+    async {
+        try
+            let! pnl = getCurrentPnL ()
+            printfn $"Got pnl: %A{pnl}"
+            return (Successful.OK "Success\n", $"Got pnl: %A{pnl}")
+        with
+        | ex ->
+            printfn "Error retrieving pnl"
+            return (RequestErrors.BAD_REQUEST "Error", "Error retrieving pnl")
+        
     }
 
 let app =
@@ -192,6 +197,13 @@ let app =
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
         GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
+        POST >=> path "/api/pnl" >=> handleRequest togglePnL
+        GET >=> path "/api/current-pnl" >=> handleRequest getCurrPnl
     ]
 
-startWebServer defaultConfig app
+
+startWebServer { defaultConfig with bindings = [ HttpBinding.createSimple HTTP "0.0.0.0" 8080  ] } app
+
+
+
+

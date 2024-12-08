@@ -4,11 +4,11 @@ open System
 open System.Text.Json
 open Core.Model.Models
 
-let toExchange (exchangeId: string) =
+let toExchange (exchangeId: int) =
     match exchangeId with
-    | "Bitfinex" -> Bitfinex
-    | "Kraken" -> Kraken
-    | "Bitstamp" -> Bitstamp
+    | 2 -> Bitfinex
+    | 23 -> Kraken
+    | 6 -> Bitstamp
     | _ -> failwith $"Unknown exchange: {exchangeId}"
 
 let parseMessage(json: string) =
@@ -32,7 +32,7 @@ let parseMessage(json: string) =
                     let quote = {
                         Symbol = pair
                         Pair =  pair
-                        Exchange = toExchange (exchangeId.ToString())
+                        Exchange = toExchange (exchangeId)
                         BidPrice = bidPrice
                         BidSize = bidSize 
                         AskPrice = askPrice

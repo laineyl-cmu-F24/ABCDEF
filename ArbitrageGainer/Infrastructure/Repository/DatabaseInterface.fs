@@ -32,13 +32,23 @@ let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 // let currencyPairsCollection = db.GetCollection<CurrencyPair>("currency_pairs")
 let createCurrencyPair (pairName: string) =
     try
-        // printfn "received name %A" pairName
         let newCurrencyPair = { Id = ObjectId.GenerateNewId(); name = pairName }
         let _ = currencyPairsCollection.InsertOne(newCurrencyPair)
         // printfn "Inserted currency pair: %A" createRes
         Ok ()
     with
     | ex -> Error (DatabaseError ex.Message)
+
+let getCurrencyPair() =
+    let currencyPairs = 
+        currencyPairsCollection.Find(FilterDefinition<CurrencyPair>.Empty)
+        |> fun cursor -> cursor.ToList()
+
+    let names = 
+        currencyPairs 
+        |> Seq.map (fun cp -> cp.name) 
+        |> Set.ofSeq
+    names
     
 let orderCollection = db.GetCollection<Order>("orders")
 let saveOrder order =
@@ -74,3 +84,21 @@ let getTransactionWithinTime (startTime:DateTime) (endTime:DateTime) =
             Builders<Transaction>.Filter.Lte((fun t -> t.Timestamp), endTime)
         )
     tryDbOperation (fun () -> transactionCollection.Find(filter).ToList()) ()
+    
+let historicalArbitrageOpportunity = db.GetCollection<TradeRecord>("historicalArbitrageOpportunities")
+
+let saveHistoricalArbitrageOpportunity (opportunity: TradeRecord) =
+    try
+        historicalArbitrageOpportunity.InsertOne(opportunity)
+        Ok ()
+    with
+    | ex -> Error (DatabaseError ex.Message)
+
+let getHistoricalOpportunity () =
+    historicalArbitrageOpportunity
+        .Find(Builders<TradeRecord>.Filter.Empty)
+        .ToList()
+    |> Seq.toList
+
+
+    

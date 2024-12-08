@@ -109,6 +109,7 @@ let processArbitrageOpportunities (cacheAgent: MailboxProcessor<CacheMessage>) (
         match arbitrageOpportunities with
         |Some opportunity ->
             do! executeTrades opportunity tradingParams cacheAgent
+            printfn "Finished executing arbitrage opportunity for pair: %s" opportunity.Pair
         | None -> () 
     }
     

@@ -7,11 +7,14 @@ open MongoDB.Driver
 open Core.Model.Models
 open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
+open Service.ApplicationService.PnL
+open Service.ApplicationService.TradingState
+open Logging.Logger
 
-// TODO: wait to be called by data feed
+
 let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
         match orderStatus.Status with
-         // TODO: add PNL here !!
+         
         | "FullyFilled" ->
             let transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
@@ -25,6 +28,24 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             }
             let result = saveTransaction transaction
             printfn $"Transaction stored: %A{transaction}"
+            addTransaction transaction
+            printfn "Transaction added to PNL"
+            
+            let! currentState = getTradingState ()
+            let threshold =
+                match currentState.TradingParams with
+                | Some tp -> tp.PnLThreshold
+                | None -> failwith "Trading parameters are not available."
+                
+            match threshold with
+                | Some t ->
+                    let! curr = getCurrentPnL ()
+                    match curr >= t with
+                        | true -> pnLEvent.Trigger(ThresholdExceeded)
+                        | false -> printfn "Current PnL within threshold"
+                    return ()
+                | None -> printfn "No threshold set"
+            return ()
         | "PartiallyFilled" ->
             let transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
@@ -38,6 +59,8 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             }
             let result = saveTransaction transaction
             printfn $"Partial transaction stored: %A{transaction}"
+            addTransaction transaction
+            printfn "Transaction added to PNL"
 
             // Emit a new order for the remaining amount
             let newOrder = {
@@ -56,10 +79,13 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             let! submittedOrder =
                 match order.Exchange with
                 | Bitfinex ->
+                    createLogger "New Order Emitted to Bitfinex"
                     submitBitfinexOrder newOrder
                 | Kraken ->
+                    createLogger "New Order Emitted to Kraken"
                     submitKrakenOrder newOrder
                 | Bitstamp ->
+                    createLogger "New Order Emitted to Bitstamp"
                     emitBitstampOrder newOrder
                     
             return ()
@@ -76,9 +102,13 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let availableBuyAmount = buyQuote.RemainingAskSize
     let availableSellAmount = sellQuote.RemainingBidSize
     let desiredAmount = Math.Min(availableBuyAmount, availableSellAmount)
-
-    // Configuration Constants
-    let MAX_TOTAL_TRANSACTION_VALUE = decimal 2000.0
+    
+    let! currentState = getTradingState ()
+    let MAX_TOTAL_TRANSACTION_VALUE =
+        match currentState.TradingParams with
+        | Some tp -> tp.MaxTransactionValue
+        | None -> failwith "Trading parameters are not available."
+    // let MAX_TOTAL_TRANSACTION_VALUE = decimal 2000.0
 
     // Ensure total transaction value does not exceed MAX_TOTAL_TRANSACTION_VALUE
     let buyTotal = desiredAmount * buyPrice
@@ -86,11 +116,12 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let totalTransactionValue = buyTotal + sellTotal
 
     let adjustedAmount =
-        if totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE then
+        match totalTransactionValue > MAX_TOTAL_TRANSACTION_VALUE with
+        | true ->
             // Adjust the amount to fit within the max total transaction value
             let allowedAmount = MAX_TOTAL_TRANSACTION_VALUE / (buyPrice + sellPrice)
             Math.Floor(allowedAmount * 10000m) / 10000m // Round down to 4 decimal places
-        else
+        | _ ->
             desiredAmount
 
     // Ensure final amount respects available amounts on both exchanges
@@ -126,10 +157,13 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let! submittedBuyOrder =
         match buyOrder.Exchange with
         | Bitfinex ->
+            createLogger "Buy Order Submitted to Bitfinex"
             submitBitfinexOrder buyOrder
         | Kraken ->
+            createLogger "Buy Order Submitted to Kraken"
             submitKrakenOrder buyOrder
         | Bitstamp ->
+            createLogger "Buy Order Submitted to Bitstamp"
             emitBitstampOrder buyOrder
 
     printfn $"Submitted Buy Order: %A{submittedBuyOrder}"
@@ -138,10 +172,13 @@ let emitBuySellOrders (opportunity: ArbitrageOpportunity) = task {
     let! submittedSellOrder =
         match sellOrder.Exchange with
         | Bitfinex ->
+            createLogger "Sell Order Submitted to Bitfinex"
             submitBitfinexOrder sellOrder
         | Kraken ->
+            createLogger "Sell Order Submitted to Kraken"
             submitKrakenOrder sellOrder
         | Bitstamp ->
+            createLogger "Sell Order Submitted to Bitstamp"
             emitBitstampOrder sellOrder
 
     printfn $"Submitted Sell Order: %A{submittedSellOrder}"
