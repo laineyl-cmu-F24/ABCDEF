@@ -82,7 +82,14 @@ let reduceHistoricalData historicalData =
     |> Seq.map (fun (pair, opportunities) -> (pair, Seq.length opportunities))
     
 let calculateHistoricalArbitrage file=
-    let data = loadHistoricalData file
+    let currentDirectory = System.IO.Directory.GetCurrentDirectory()
+    let filePath = System.IO.Path.Combine(currentDirectory, "historicalData.txt")
+    let data = loadHistoricalData filePath
+
+        // try
+        //     loadHistoricalData file
+        // with
+        // | ex -> loadHistoricalData "ArbitrageGainer/historicalData.txt"
     let mapResult = mapHistoricalData data
     let reduceResult = reduceHistoricalData mapResult
     

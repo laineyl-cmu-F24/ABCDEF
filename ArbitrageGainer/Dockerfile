@@ -1,25 +1,33 @@
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
-# expose the port on which you are running web server in your application
+# Expose the port
 EXPOSE 8080
 
-
+# Set working directory
 WORKDIR /source
 
-
-# Copy fsproj and restore all dependencies
+# Copy and restore dependencies
 COPY ./*.fsproj ./
 RUN dotnet restore
 
-
-# Copy source code and build / publish app and libraries
+# Copy source code and build the application
 COPY . .
 RUN dotnet publish -c release -o /app
 
+# Create log directory in the build stage
+RUN mkdir -p /source/Service/ApplicationService
 
-# Run project
-# Create new layer with runtime, copy app / libraries, then run dotnet
+# Copy the historicalData.txt file into the container
+COPY historicalData.txt /app/historicalData.txt
+
+# Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
+
+# Copy app files and ensure log directory is created in runtime
 COPY --from=build /app .
+RUN mkdir -p /source/Service/ApplicationService
+
+# Start the application
 ENTRYPOINT ["dotnet", "ArbitrageGainer.dll"]
