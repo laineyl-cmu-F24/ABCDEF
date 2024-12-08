@@ -107,6 +107,19 @@ type HistoricalArbitrageOpportunity = {
     
 type Side = Buy | Sell
 
+// Helper functions to convert between Side and string
+let sideToString (side: Side) =
+    match side with
+    | Buy -> "Buy"
+    | Sell -> "Sell"
+    
+let stringToSide (str: string) =
+    match str with
+    | "Buy" -> Buy
+    | "Sell" -> Sell
+    | _ -> failwith "Invalid side value"
+
+
 type Order = {
     Id: string
     Exchange: Exchange
@@ -132,6 +145,17 @@ type Transaction = {
     Exchange: Exchange
     Symbol: string
     Side: Side
+    Price: decimal
+    Amount: decimal
+    Timestamp: DateTime
+}
+
+type TransactionDB = {
+    Id: string
+    OrderId: string
+    Exchange: string
+    Symbol: string
+    Side: string
     Price: decimal
     Amount: decimal
     Timestamp: DateTime

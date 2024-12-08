@@ -58,32 +58,110 @@ let saveOrder order =
     with
     | ex -> Error (DatabaseError ex.Message)
 
-let transactionCollection = db.GetCollection<Transaction>("transactions")
+let transactionCollection = db.GetCollection<TransactionDB>("transactions")
+
+// Helper functions for Exchange
+let exchangeToString (exchange: Exchange) =
+    match exchange with
+    | Bitfinex -> "Bitfinex"
+    | Kraken -> "Kraken"
+    | Bitstamp -> "Bitstamp"
+
+let stringToExchange (str: string) =
+    match str with
+    | "Bitfinex" -> Bitfinex
+    | "Kraken" -> Kraken
+    | "Bitstamp" -> Bitstamp
+    | _ -> failwith "Invalid exchange value"
+
+// Helper functions for Side
+let sideToString (side: Side) =
+    match side with
+    | Buy -> "Buy"
+    | Sell -> "Sell"
+
+let stringToSide (str: string) =
+    match str with
+    | "Buy" -> Buy
+    | "Sell" -> Sell
+    | _ -> failwith "Invalid side value"
+
+// Convert Transaction to TransactionDB
+let transactionToTransactionDB (transaction: Transaction): TransactionDB = {
+    Id = transaction.Id
+    OrderId = transaction.OrderId
+    Exchange = exchangeToString transaction.Exchange
+    Symbol = transaction.Symbol
+    Side = sideToString transaction.Side
+    Price = transaction.Price
+    Amount = transaction.Amount
+    Timestamp = transaction.Timestamp
+}
+
+// Convert TransactionDB to Transaction
+let transactionDBToTransaction (transactionDB: TransactionDB): Transaction = {
+    Id = transactionDB.Id
+    OrderId = transactionDB.OrderId
+    Exchange = stringToExchange transactionDB.Exchange
+    Symbol = transactionDB.Symbol
+    Side = stringToSide transactionDB.Side
+    Price = transactionDB.Price
+    Amount = transactionDB.Amount
+    Timestamp = transactionDB.Timestamp
+}
 
 // Reusable Error Handling
-let tryDbOperation (operation: unit -> 'T) (args: 'Args) : DomainResult<'T> =
+// Reusable Error Handling
+let tryDbOperation (operation: unit -> 'T) : DomainResult<'T> =
     try
-        Ok (operation args)
+        Ok (operation ())
     with
     | ex -> Error (DatabaseError ex.Message)
 
 let saveTransaction (transaction: Transaction) =
-    tryDbOperation (fun () -> transactionCollection.InsertOne(transaction)) ()
+    let transactionDB = transactionToTransactionDB transaction
+    tryDbOperation (fun () ->
+        transactionCollection.InsertOne(transactionDB)
+        transactionDB // Return the saved document for confirmation
+    )
 
 let getTransactions () =
-    tryDbOperation (fun () -> transactionCollection.Find(Builders<Transaction>.Filter.Empty).ToList())
+    tryDbOperation (fun () -> 
+        transactionCollection
+            .Find(Builders<TransactionDB>.Filter.Empty)
+            .ToList() // Returns a .NET List<TransactionDB>
+            .ToArray() // Convert to array
+            |> Array.toList // Convert to F# list
+            |> List.map transactionDBToTransaction // Map to domain type
+    )
 
 let getTransactionByOrderId (orderId: string) =
-    let filter = Builders<Transaction>.Filter.Eq((fun t -> t.OrderId), orderId)
-    tryDbOperation (fun () -> transactionCollection.Find(filter).ToList())
+    let filter = Builders<TransactionDB>.Filter.Eq("OrderId", orderId)
+    tryDbOperation (fun () -> 
+        transactionCollection
+            .Find(filter)
+            .ToList()
+            .ToArray()
+            |> Array.toList
+            |> List.map transactionDBToTransaction
+    )
 
-let getTransactionWithinTime (startTime:DateTime) (endTime:DateTime) =
+let getTransactionWithinTime (startTime: DateTime) (endTime: DateTime) =
     let filter =
-        Builders<Transaction>.Filter.And(
-            Builders<Transaction>.Filter.Gte((fun t -> t.Timestamp), startTime),
-            Builders<Transaction>.Filter.Lte((fun t -> t.Timestamp), endTime)
+        Builders<TransactionDB>.Filter.And(
+            Builders<TransactionDB>.Filter.Gte("Timestamp", startTime),
+            Builders<TransactionDB>.Filter.Lte("Timestamp", endTime)
         )
-    tryDbOperation (fun () -> transactionCollection.Find(filter).ToList()) ()
+    tryDbOperation (fun () -> 
+        transactionCollection
+            .Find(filter)
+            .ToList()
+            .ToArray()
+            |> Array.toList
+            |> List.map transactionDBToTransaction
+    )
+
+
     
 let historicalArbitrageOpportunity = db.GetCollection<TradeRecord>("historicalArbitrageOpportunities")
 

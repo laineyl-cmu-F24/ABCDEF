@@ -16,7 +16,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
         match orderStatus.Status with
          
         | "FullyFilled" ->
-            let transaction = {
+            let transaction:Transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
                 OrderId = orderStatus.OrderId
                 Exchange = order.Exchange
@@ -47,7 +47,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
                 | None -> printfn "No threshold set"
             return ()
         | "PartiallyFilled" ->
-            let transaction = {
+            let transaction:Transaction = {
                 Id = ObjectId.GenerateNewId().ToString()
                 OrderId = orderStatus.OrderId
                 Exchange = order.Exchange
