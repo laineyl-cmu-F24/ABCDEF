@@ -4,6 +4,8 @@ open System
 open System.Threading.Tasks
 open MongoDB.Bson
 open MongoDB.Driver
+open Akka.Actor
+open Akka.FSharp
 open Core.Model.Models
 open Infrastructure.Repository.DatabaseInterface
 open Infrastructure.Client.ModuleAPI
@@ -12,7 +14,7 @@ open Service.ApplicationService.TradingState
 open Logging.Logger
 
 
-let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = task {
+let rec handleOrderStatus (pnlActor: IActorRef) (order: Order) (orderStatus: OrderStatus) : Task = task {
         match orderStatus.Status with
          
         | "FullyFilled" ->
@@ -26,9 +28,11 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
                 Amount = orderStatus.FulfilledAmount
                 Timestamp = DateTime.UtcNow
             }
-            let result = saveTransaction transaction
+            let result = saveTransaction transaction 
             printfn $"Transaction stored: %A{transaction}"
-            addTransaction transaction
+            // addTransaction transaction
+            // Send AddTransaction message to the PnLActor
+            pnlActor <! AddTransaction transaction
             printfn "Transaction added to PNL"
             
             let! currentState = getTradingState ()
@@ -39,7 +43,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
                 
             match threshold with
                 | Some t ->
-                    let! curr = getCurrentPnL ()
+                    let! curr = pnlActor <? GetCurrentPnL
                     match curr >= t with
                         | true -> pnLEvent.Trigger(ThresholdExceeded)
                         | false -> printfn "Current PnL within threshold"
@@ -59,7 +63,7 @@ let rec handleOrderStatus (order: Order) (orderStatus: OrderStatus) : Task = tas
             }
             let result = saveTransaction transaction
             printfn $"Partial transaction stored: %A{transaction}"
-            addTransaction transaction
+            pnlActor <! AddTransaction transaction
             printfn "Transaction added to PNL"
 
             // Emit a new order for the remaining amount

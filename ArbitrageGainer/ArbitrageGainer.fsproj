@@ -34,6 +34,8 @@
     
     <!-- Dependencies -->
     <ItemGroup>
+        <PackageReference Include="Akka" Version="1.5.32" />
+        <PackageReference Include="Akka.FSharp" Version="1.5.32" />
         <PackageReference Include="FSharp.Data" Version="6.4.0" />
         <PackageReference Include="Giraffe" Version="7.0.2" />
         <PackageReference Include="Microsoft.NETCore.Platforms" Version="8.0.0-preview.7.23375.6" />

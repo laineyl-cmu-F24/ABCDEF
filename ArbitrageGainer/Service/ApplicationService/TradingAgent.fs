@@ -1,11 +1,17 @@
 module Service.ApplicationService.TradingAgent
 
 open System.Threading.Tasks
+open Akka.Actor
+open Akka.FSharp
 
 open Core.Model.Models
 open Service.ApplicationService.Cache
 open Service.ApplicationService.OrderManagement
+open Service.ApplicationService.PnL
 open Infrastructure.Client.ModuleAPI
+
+let system = ActorSystem.Create "TradingSystem"
+let pnlActor = createPnLActor system
 
 //check if a spread exists
 let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: TradingParameters) =
@@ -92,8 +98,8 @@ let executeTrades (opportunity: ArbitrageOpportunity) (tradingParams: TradingPar
             // do! placeOrder "Sell" (getExchangeString opportunity.SellCachedQuote.Quote.Exchange) opportunity.Pair opportunity.SellCachedQuote.Quote.BidPrice maxQty
             let! buyStatus = getOrderStatus submittedBuyOrder
             let! sellStatus = getOrderStatus submittedSellOrder
-            do! handleOrderStatus submittedBuyOrder buyStatus
-            do! handleOrderStatus submittedSellOrder sellStatus
+            do! handleOrderStatus pnlActor submittedBuyOrder buyStatus
+            do! handleOrderStatus pnlActor submittedSellOrder sellStatus
             // Update remaining quantities
             cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.BuyCachedQuote.Quote.Exchange, 0M, -maxQty))
             cacheAgent.Post(UpdateQuantities(opportunity.Pair, opportunity.SellCachedQuote.Quote.Exchange, -maxQty, 0M))

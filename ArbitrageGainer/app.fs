@@ -7,6 +7,8 @@ open Suave.Operators
 open Suave.Filters
 open MongoDB.Driver
 open MongoDB.Bson
+open Akka.Actor
+open Akka.FSharp
 
 open Service.ApplicationService.Historical
 open Service.ApplicationService.Metric
@@ -50,6 +52,9 @@ let initialState = {
     WebSocketClientCloseFunc =  None
     StartTradingTime = None
 }
+
+let system = ActorSystem.Create "PnLSystem"
+let pnlActor = createPnLActor system
 
 let handleRequest func =
     fun (context: HttpContext) ->
@@ -167,7 +172,7 @@ let getAnnualReturn (context: HttpContext) =
         | Some tradingParams, startTimeOpt ->
             try
                 let initialAmount = tradingParams.InitialInvestmentAmount
-                let! pnlValue = getCurrentPnL ()
+                let! pnlValue = getCurrentPnL pnlActor
                 let annualReturn = AnnualizedMetric initialAmount startTimeOpt pnlValue // Pass start time & pnl
                 return (Successful.OK "Success\n", $"Got annualReturn: %A{annualReturn}")
             with
@@ -176,18 +181,17 @@ let getAnnualReturn (context: HttpContext) =
         |_ -> return (RequestErrors.BAD_REQUEST "Error", "Trading parameters not set")
     }
     
-let getCurrPnl (context: HttpContext) =
-    async {
-        try
-            let! pnl = getCurrentPnL ()
-            printfn $"Got pnl: %A{pnl}"
-            return (Successful.OK "Success\n", $"Got pnl: %A{pnl}")
-        with
-        | ex ->
-            printfn "Error retrieving pnl"
-            return (RequestErrors.BAD_REQUEST "Error", "Error retrieving pnl")
-        
-    }
+let getCurrPnl (pnlActor: IActorRef) =
+    fun (context: HttpContext) ->
+        async {
+            try
+                let! pnl = pnlActor <? GetCurrentPnL
+                return Successful.OK $"Current PnL: {pnl}", ()
+            with
+            | ex ->
+                return RequestErrors.BAD_REQUEST $"Error retrieving PnL: {ex.Message}", ()
+        }
+
 
 let app =
     choose [
@@ -197,8 +201,8 @@ let app =
         GET >=> path "/api/historical-arbitrage" >=> handleRequest getHistoricalArbitrage
         GET >=> path "/api/cross-trade-pair" >=> handleRequest getCrossTradeCurrencyPairs
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
-        POST >=> path "/api/pnl" >=> handleRequest togglePnL
-        GET >=> path "/api/current-pnl" >=> handleRequest getCurrPnl
+        POST >=> path "/api/pnl" >=> handleRequest (togglePnLHandler pnlActor)
+        GET >=> path "/api/current-pnl" >=> handleRequest (getCurrPnl pnlActor)
     ]
 
 
