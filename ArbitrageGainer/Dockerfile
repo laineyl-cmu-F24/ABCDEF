@@ -11,14 +11,20 @@ WORKDIR /source
 COPY ./*.fsproj ./
 RUN dotnet restore
 
+# Set create mode to log.txt
+RUN mkdir -p /Service/ApplicationService
+RUN chmod -R 755 /Service/ApplicationService
+
 
 # Copy source code and build / publish app and libraries
 COPY . .
 RUN dotnet publish -c release -o /app
 
 
-# Run project
-# Create new layer with runtime, copy app / libraries, then run dotnet
+# Copy the historicalData.txt file into the container
+COPY historicalData.txt /app/historicalData.txt
+
+# Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:6.0
 WORKDIR /app
 COPY --from=build /app .
