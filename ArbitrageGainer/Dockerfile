@@ -11,6 +11,10 @@ WORKDIR /source
 COPY ./*.fsproj ./
 RUN dotnet restore
 
+# Set create mode to log.txt
+RUN mkdir -p /Service/ApplicationService
+RUN chmod -R 755 /Service/ApplicationService
+
 
 # Copy source code and build / publish app and libraries
 COPY . .
