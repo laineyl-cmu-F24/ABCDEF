@@ -188,6 +188,40 @@ let getCurrPnl (context: HttpContext) =
             return (RequestErrors.BAD_REQUEST "Error", "Error retrieving pnl")
         
     }
+let tryParseDateTime (dateTimeStr: string) =
+    match DateTime.TryParse(dateTimeStr) with
+    | true, value -> Some value
+    | false, _ -> None
+    
+let dateTimeToDecimal (dateTime: DateTime) =
+    let epoch = DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+    let timeSpan = dateTime.ToUniversalTime() - epoch
+    timeSpan.TotalDays
+    
+let getHistoricalPnl (startDateTimeStr, endDateTimeStr): WebPart =
+    fun ctx ->
+        async {
+            match tryParseDateTime startDateTimeStr, tryParseDateTime endDateTimeStr with
+            | Some startDateTime, Some endDateTime ->
+                // Call the asynchronous function
+                let! res = getHistoricalPnLWithIn startDateTime endDateTime
+
+                // Prepare the response
+                let msg = sprintf "Start: %s, End: %s, Result: %A" startDateTimeStr endDateTimeStr res
+                return! Successful.OK msg ctx
+            | _ ->
+                return! RequestErrors.BAD_REQUEST "Invalid date format or date range." ctx
+        }
+
+
+    // Successful.OK (sprintf "Start: %s, End: %s" startDateTimeStr endDateTimeStr)
+
+let handleRequestGet func =
+    fun (context: HttpContext) ->
+        async {
+            let! webPart, _ = func context
+            return! webPart context
+        }
 
 let app =
     choose [
@@ -199,6 +233,7 @@ let app =
         GET >=> path "/api/annual-return" >=> handleRequest getAnnualReturn
         POST >=> path "/api/pnl" >=> handleRequest togglePnL
         GET >=> path "/api/current-pnl" >=> handleRequest getCurrPnl
+        GET >=> pathScan "/api/historical-pnl/%s/%s" (fun start end_ -> getHistoricalPnl start end_)
     ]
 
 

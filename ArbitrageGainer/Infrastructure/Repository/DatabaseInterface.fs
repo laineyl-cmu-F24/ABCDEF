@@ -68,7 +68,7 @@ let tryDbOperation (operation: unit -> 'T) (args: 'Args) : DomainResult<'T> =
     | ex -> Error (DatabaseError ex.Message)
 
 let saveTransaction (transaction: Transaction) =
-    tryDbOperation (fun () -> transactionCollection.InsertOne(transaction))
+    tryDbOperation (fun () -> transactionCollection.InsertOne(transaction)) ()
 
 let getTransactions () =
     tryDbOperation (fun () -> transactionCollection.Find(Builders<Transaction>.Filter.Empty).ToList())
