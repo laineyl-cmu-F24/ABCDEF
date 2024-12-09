@@ -2,52 +2,69 @@ module ArbitrageGainer.Service.ApplicationService.Reducer
 
 open System
 
-let reduceHistoricalData historicalData =
-    historicalData
-    |> Seq.groupBy fst
-    |> Seq.map (fun (key, values) ->
-        let quotes =
-            values
-            |> Seq.map snd
-            |> Seq.map (fun (value:String) ->
-                let parts = value.Split(',')
-                let exchangeID = int parts.[0]
-                let bid = decimal parts.[1]
-                let ask = decimal parts.[2]
-                (exchangeID, bid, ask))
-            
-        let highestBids =
-            quotes
-            |> Seq.groupBy(fun (exchangeID, _, _) -> exchangeID)
-            |> Seq.map(fun (_, group) -> group |> Seq.maxBy (fun (_, bid, _) -> bid))
+let flushCurrentKey (currentKey:String) entries =
+    match entries with
+    | [] -> ()
+    | _ ->
+        let getQuotesByExchange =
+            entries
+            |> Seq.groupBy(fun(exchangeID, _, _) -> exchangeID)
+            |> Seq.map(fun(exchange, historicalData) ->
+                let highestBid = historicalData |> Seq.maxBy(fun(_, bp, _) -> bp)
+                let lowestAsk = historicalData |> Seq.minBy(fun(_, _, ap) -> ap)
+                (exchange, highestBid, lowestAsk))
+            |> Seq.toList
         
-        let lowestAsks =
-            quotes
-            |> Seq.groupBy (fun (exchangeID, _, _) -> exchangeID)
-            |> Seq.map (fun (_, group) -> group |> Seq.minBy (fun (_, _, ask) -> ask))
-            
         let opportunities =
-            highestBids
-            |> Seq.collect (fun (exchange1, bid, _) ->
-                lowestAsks
-                |> Seq.filter (fun (exchange2, _, ask) -> exchange1 <> exchange2 && bid - ask > 0.01m)
-                |> Seq.map (fun _ -> 1))
+            getQuotesByExchange
+            |> Seq.collect(fun (_,(_,bid,_),_) ->
+                getQuotesByExchange
+                |> Seq.filter(fun (_,_,(_,_,ask)) -> bid - ask > 0.01M)
+                |> Seq.map(fun _-> 1))
             |> Seq.sum
         
-        key, opportunities)
-    |> Seq.filter(fun (_, opportunities) -> opportunities > 0)
-    |> Seq.iter (fun (key, opportunities) -> printfn "%s\t%d" key opportunities)
+        match opportunities with
+        | 0 -> ()
+        | _ ->
+            let parts = currentKey.Split('|')
+            match parts with
+            | [|_; pair|] -> printfn "%s\t%d" pair opportunities
+            | _ -> ()
 
-let processReducer() =
-    let input = Seq.initInfinite (fun _ -> Console.ReadLine())
-    input
-    |> Seq.takeWhile ((<>) null)
-    |> Seq.map (fun line ->
+let rec readLines (currentKey: String) entries =
+    match Console.In.ReadLine() with
+    | null ->
+        // End of stream
+        flushCurrentKey currentKey entries
+    | line ->
         let parts = line.Split('\t')
-        (parts.[0], parts.[1]))
-    |> reduceHistoricalData
-        
-        
-        
-        
+        match parts with
+        | [| key; vals |] ->
+            let valParts = vals.Split(',')
+            match valParts with
+            | [|exchangeId; bp; ap|] ->
+                let newKey = key
+                let exchangeID = int exchangeId
+                let bid = decimal bp
+                let ask = decimal ap
+                match currentKey with
+                | "" ->
+                    // First key encountered
+                    readLines newKey [(exchangeID, bid, ask)]
+                | _ when newKey = currentKey ->
+                    // Same key, just add the entry
+                    readLines currentKey ((exchangeID, bid, ask)::entries)
+                | _ ->
+                    // New key encountered, flush old entries first
+                    flushCurrentKey currentKey entries
+                    readLines newKey [(exchangeID, bid, ask)]
+            | _ ->
+                readLines currentKey entries
+        | _ ->
+            readLines currentKey entries
 
+[<EntryPoint>]
+let main argv =
+    readLines "" []
+    0
+                    

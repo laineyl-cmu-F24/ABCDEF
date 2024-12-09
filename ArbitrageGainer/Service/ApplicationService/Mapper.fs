@@ -20,24 +20,24 @@ type HistoricalData =
         }
     ]
     """>
+    
+let rec readLines()  =
+    match Console.In.ReadLine() with
+    | null -> ()
+    | line when String.IsNullOrWhiteSpace(line) -> readLines ()
+    | line ->
+        let data = HistoricalData.Parse(line)
+        data 
+        |> Seq.iter (fun q ->
+            let bucket = q.T / 5L
+            let key = sprintf "%d|%s" bucket q.Pair
+            let value = sprintf "%d,%M,%M" q.X q.Bp q.Ap
+            printfn "%s\t%s" key value
+        )
+        readLines()
 
-let mapHistoricalData lines =
-    lines
-    |> Seq.collect(fun line ->
-        match line |> String.IsNullOrWhiteSpace with
-        | true -> Seq.empty
-        | false ->
-            let historicalData = HistoricalData.Parse(line)
-            historicalData
-            |> Seq.map(fun q -> 
-                let bucket = q.T / 5L
-                let key = $"{q.Pair}:{bucket}"
-                let value = $"{q.X},{q.Bp},{q.Ap}"
-                key, value))
-    |> Seq.iter (fun (key, value) -> printfn "%s\t%s" key value)
-
-let processMapper() =
-    let input = Seq.initInfinite (fun _ -> Console.ReadLine())
-    input
-    |> Seq.takeWhile ((<>) null)
-    |> mapHistoricalData
+[<EntryPoint>]
+let main argv =
+    readLines ()
+    0
+            
