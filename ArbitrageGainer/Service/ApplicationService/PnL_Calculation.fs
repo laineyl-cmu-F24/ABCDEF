@@ -36,7 +36,7 @@ type PnLMessage =
     | ResetThreshold
     | ResetAgent
     | GetHistoricalPnL of DateTime * DateTime * IActorRef
-    | GetCurrentPnL of IActorRef
+    | GetCurrentPnL
     | TogglePnl of bool
 
 // Calculate the P&L of a transaction
@@ -79,7 +79,7 @@ let createPnLActor system =
                         printfn "PnL calculation is toggled off."
                         return! loop state
                 
-                | GetCurrentPnL reply ->
+                | GetCurrentPnL ->
                     // reply to the sender
                     mailbox.Sender() <! state.TotalPnL
                     return! loop state

@@ -15,6 +15,7 @@ open Service.ApplicationService.Metric
 open Service.ApplicationService.CrossTradedCurrencyPair
 open Service.ApplicationService.PnL
 open Service.ApplicationService.TradingState
+open Service.ApplicationService.AkkaActor
 open Core.Model.Models
 open Service.ApplicationService.Toggle
 open Infrastructure.Client.EmailClient
@@ -53,8 +54,6 @@ let initialState = {
     StartTradingTime = None
 }
 
-let system = ActorSystem.Create "PnLSystem"
-let pnlActor = createPnLActor system
 
 let handleRequest func =
     fun (context: HttpContext) ->

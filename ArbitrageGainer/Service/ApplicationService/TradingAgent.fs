@@ -7,11 +7,9 @@ open Akka.FSharp
 open Core.Model.Models
 open Service.ApplicationService.Cache
 open Service.ApplicationService.OrderManagement
-open Service.ApplicationService.PnL
+open Service.ApplicationService.AkkaActor
 open Infrastructure.Client.ModuleAPI
 
-let system = ActorSystem.Create "TradingSystem"
-let pnlActor = createPnLActor system
 
 //check if a spread exists
 let findArbitrageOpportunities (cachedQuotes:seq<CachedQuote>) (tradingParams: TradingParameters) =
